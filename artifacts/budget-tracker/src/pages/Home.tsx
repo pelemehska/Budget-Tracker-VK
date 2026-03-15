@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Settings,
   ArrowLeft,
+  Check,
 } from "lucide-react";
 import { useBudget } from "@/hooks/use-budget";
 import { formatCurrency } from "@/lib/utils";
@@ -21,15 +22,36 @@ export default function Home() {
   const [rawValue, setRawValue] = useState(budget > 0 ? String(budget) : "");
   const [isFocused, setIsFocused] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [replaceMode, setReplaceMode] = useState(true);
+  const [applied, setApplied] = useState(false);
 
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setRawValue(raw);
-    const num = parseFloat(raw.replace(",", "."));
-    if (!isNaN(num) && num >= 0) {
-      setBudget(num);
-    } else if (raw === "") {
-      setBudget(0);
+    if (replaceMode) {
+      const num = parseFloat(raw.replace(",", "."));
+      if (!isNaN(num) && num >= 0) setBudget(num);
+      else if (raw === "") setBudget(0);
+    }
+  };
+
+  const applyDelta = () => {
+    const delta = parseFloat(rawValue.replace(",", "."));
+    if (!isNaN(delta)) {
+      const newBudget = Math.max(0, budget + delta);
+      setBudget(newBudget);
+      setRawValue("");
+      setApplied(true);
+      setTimeout(() => setApplied(false), 1500);
+    }
+  };
+
+  const handleToggle = () => {
+    setReplaceMode((prev) => !prev);
+    setRawValue("");
+    if (replaceMode === false) {
+      // switching back to replace — sync input with current budget
+      setRawValue(budget > 0 ? String(budget) : "");
     }
   };
 
@@ -83,13 +105,47 @@ export default function Home() {
 
               {/* MONTHLY BUDGET INPUT */}
               <Card className="space-y-3 relative">
-                <label className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
-                  <Target className="w-4 h-4 text-primary" />
-                  Общий бюджет на месяц
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                    <Target className="w-4 h-4 text-primary" />
+                    {replaceMode ? "Заменить сумму" : "Изменить сумму"}
+                  </label>
+
+                  {/* Toggle */}
+                  <button
+                    onClick={handleToggle}
+                    className="flex items-center gap-2 group"
+                  >
+                    <span className="text-xs text-muted font-medium">
+                      {replaceMode ? "Замена" : "Δ Разница"}
+                    </span>
+                    <div className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${replaceMode ? "bg-primary" : "bg-secondary"}`}>
+                      <motion.div
+                        className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow"
+                        animate={{ left: replaceMode ? "calc(100% - 18px)" : "2px" }}
+                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      />
+                    </div>
+                  </button>
+                </div>
+
+                {/* Current total shown in adjust mode */}
+                <AnimatePresence>
+                  {!replaceMode && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-xs text-muted font-medium"
+                    >
+                      Текущая сумма: <span className="text-foreground font-bold">{formatCurrency(budget)}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-bold text-xl">
-                    ₽
+                    {!replaceMode && rawValue.startsWith("-") ? "−" : replaceMode ? "₽" : "+"}
                   </div>
                   <input
                     type="text"
@@ -98,22 +154,54 @@ export default function Home() {
                     onChange={handleBudgetChange}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    placeholder="0"
+                    placeholder={replaceMode ? "0" : "введи сумму"}
                     className="w-full bg-secondary text-foreground text-xl font-bold rounded-xl py-4 pl-9 pr-4 outline-none border-2 border-transparent transition-all focus:border-primary/30 focus:bg-white/5"
                   />
                 </div>
+
+                {/* Hint in replace mode */}
                 <AnimatePresence>
-                  {isFocused && (
+                  {isFocused && replaceMode && (
                     <motion.p
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="text-xs text-muted font-medium pt-1"
+                      className="text-xs text-muted font-medium"
                     >
                       Обновляется мгновенно при вводе.
                     </motion.p>
                   )}
                 </AnimatePresence>
+
+                {/* Apply button in adjust mode */}
+                <AnimatePresence>
+                  {!replaceMode && (
+                    <motion.button
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      onClick={applyDelta}
+                      className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300
+                        ${applied
+                          ? "bg-green-600 text-white"
+                          : "bg-primary text-white hover:bg-[#6d28d9]"
+                        }`}
+                    >
+                      <AnimatePresence mode="wait">
+                        {applied ? (
+                          <motion.span key="ok" initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2">
+                            <Check className="w-4 h-4" /> Применено!
+                          </motion.span>
+                        ) : (
+                          <motion.span key="apply" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            Применить изменение
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+
               </Card>
             </motion.div>
           )}
@@ -128,7 +216,6 @@ export default function Home() {
               transition={{ type: "spring", stiffness: 280, damping: 26 }}
               className="space-y-4"
             >
-              {/* Header */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowSettings(false)}
@@ -139,7 +226,6 @@ export default function Home() {
                 <h2 className="text-lg font-bold text-foreground">Настройки</h2>
               </div>
 
-              {/* Empty settings card */}
               <Card className="py-16 flex flex-col items-center justify-center gap-3 text-center">
                 <Settings className="w-10 h-10 text-primary/40" />
                 <p className="text-muted text-sm font-medium">Скоро здесь появятся настройки</p>
