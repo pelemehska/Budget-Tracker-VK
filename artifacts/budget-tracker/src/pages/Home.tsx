@@ -16,8 +16,19 @@ export default function Home() {
     budget,
     setBudget,
     daysRemaining,
-    dailyLimit,
+    daysRemainingInWeek,
   } = useBudget();
+
+  const [weekMode, setWeekMode] = useState(() =>
+    localStorage.getItem("weekMode") === "true"
+  );
+
+  useEffect(() => {
+    localStorage.setItem("weekMode", String(weekMode));
+  }, [weekMode]);
+
+  const activeDays = weekMode ? daysRemainingInWeek : daysRemaining;
+  const dailyLimit = activeDays > 0 ? budget / activeDays : budget;
 
   const [rawValue, setRawValue] = useState(budget > 0 ? String(budget) : "");
   const [isFocused, setIsFocused] = useState(false);
@@ -110,10 +121,26 @@ export default function Home() {
                   <div className="text-5xl font-bold tracking-tight mb-2 tabular-nums">
                     {formatCurrency(dailyLimit)}
                   </div>
-                  <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-medium">
+                  <motion.button
+                    onClick={() => setWeekMode((w) => !w)}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-medium transition-colors hover:bg-white/30"
+                  >
                     <CalendarDays className="w-4 h-4" />
-                    <span>Осталось {daysRemaining} дн. в месяце</span>
-                  </div>
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={weekMode ? "week" : "month"}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.18 }}
+                      >
+                        {weekMode
+                          ? `Осталось ${daysRemainingInWeek} дн. в неделе`
+                          : `Осталось ${daysRemaining} дн. в месяце`}
+                      </motion.span>
+                    </AnimatePresence>
+                  </motion.button>
                 </motion.div>
               </Card>
 

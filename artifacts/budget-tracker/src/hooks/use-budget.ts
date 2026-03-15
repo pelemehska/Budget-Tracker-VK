@@ -35,8 +35,12 @@ export function useBudget() {
 
   const daysInMonth = getDaysInMonth(today);
   const currentDay = getDate(today);
-  // Include today in the remaining days
-  const daysRemaining = daysInMonth - currentDay + 1; 
+  const daysRemaining = daysInMonth - currentDay + 1;
+
+  // Days remaining in current week (Mon–Sun), including today
+  const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const dayIndexMonStart = (dayOfWeek + 6) % 7; // Mon=0, ..., Sun=6
+  const daysRemainingInWeek = 7 - dayIndexMonStart;
 
   const dailyLimit = daysRemaining > 0 ? budget / daysRemaining : budget;
 
@@ -59,6 +63,7 @@ export function useBudget() {
     setBudget,
     daysInMonth,
     daysRemaining,
+    daysRemainingInWeek,
     dailyLimit,
     isLoggedToday,
     streak,
