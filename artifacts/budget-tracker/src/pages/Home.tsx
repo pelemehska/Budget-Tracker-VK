@@ -43,14 +43,14 @@ export default function Home() {
             className="relative z-10"
           >
             <p className="text-primary-foreground/80 text-sm font-medium uppercase tracking-wider mb-2">
-              Daily Budget Limit
+              Дневной лимит бюджета
             </p>
             <div className="text-5xl font-bold tracking-tight mb-2 tabular-nums">
               {formatCurrency(dailyLimit)}
             </div>
             <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-medium">
               <CalendarDays className="w-4 h-4" />
-              <span>{daysRemaining} days remaining in month</span>
+              <span>Осталось {daysRemaining} дн. в месяце</span>
             </div>
           </motion.div>
         </Card>
@@ -59,7 +59,7 @@ export default function Home() {
         <Card className="space-y-3 relative">
           <label className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
             <Target className="w-4 h-4 text-primary" />
-            Total Monthly Budget
+            Общий бюджет на месяц
           </label>
           <div className="relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-bold text-xl">
@@ -83,7 +83,7 @@ export default function Home() {
                 exit={{ opacity: 0, height: 0 }}
                 className="text-xs text-muted font-medium pt-1"
               >
-                Updates instantly as you type.
+                Обновляется мгновенно при вводе.
               </motion.p>
             )}
           </AnimatePresence>
@@ -94,20 +94,20 @@ export default function Home() {
           <div className="p-5 border-b border-border">
             <h3 className="font-bold flex items-center gap-2 text-foreground">
               <Wallet className="w-5 h-5 text-primary" />
-              Budget Breakdown
+              Разбивка бюджета
             </h3>
           </div>
           <div className="divide-y border-border/50 divide-border/50">
             <div className="p-4 flex justify-between items-center hover:bg-secondary/50 transition-colors">
-              <span className="text-muted text-sm font-medium">Monthly Target</span>
+              <span className="text-muted text-sm font-medium">Бюджет на месяц</span>
               <span className="font-bold text-foreground tabular-nums">{formatCurrency(budget)}</span>
             </div>
             <div className="p-4 flex justify-between items-center hover:bg-secondary/50 transition-colors">
-              <span className="text-muted text-sm font-medium">Days in Month</span>
+              <span className="text-muted text-sm font-medium">Дней в месяце</span>
               <span className="font-bold text-foreground">{daysInMonth}</span>
             </div>
             <div className="p-4 flex justify-between items-center hover:bg-secondary/50 transition-colors">
-              <span className="text-muted text-sm font-medium">Days Left</span>
+              <span className="text-muted text-sm font-medium">Дней осталось</span>
               <span className="font-bold text-foreground">{daysRemaining}</span>
             </div>
           </div>
@@ -119,16 +119,16 @@ export default function Home() {
             <div>
               <h3 className="font-bold flex items-center gap-2 text-foreground mb-1">
                 <Bell className="w-5 h-5 text-primary" />
-                Daily Reminder
+                Ежедневное напоминание
               </h3>
               <p className="text-sm text-muted font-medium">
-                Log your expenses today to stay on track and maintain your streak.
+                Записывайте расходы каждый день, чтобы не выходить за рамки бюджета.
               </p>
             </div>
             {streak > 0 && (
               <div className="flex flex-col items-center justify-center bg-orange-50 text-orange-600 rounded-xl px-3 py-2 border border-orange-100 min-w-[64px]">
                 <Flame className="w-5 h-5 mb-0.5 fill-orange-500 text-orange-500" />
-                <span className="text-xs font-bold">{streak} Day{streak > 1 ? 's' : ''}</span>
+                <span className="text-xs font-bold">{streak} {streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней'}</span>
               </div>
             )}
           </div>
@@ -155,7 +155,7 @@ export default function Home() {
                   className="flex items-center gap-2"
                 >
                   <CheckCircle2 className="w-5 h-5" />
-                  <span>Logged Today</span>
+                  <span>Записано сегодня</span>
                 </motion.div>
               ) : (
                 <motion.div
@@ -165,7 +165,7 @@ export default function Home() {
                   exit={{ opacity: 0 }}
                   className="flex items-center gap-2"
                 >
-                  <span>Mark Today as Logged</span>
+                  <span>Отметить расходы за сегодня</span>
                   <ChevronRight className="w-4 h-4 opacity-70" />
                 </motion.div>
               )}
@@ -177,23 +177,23 @@ export default function Home() {
         <Card className="bg-secondary/50 border border-border/50">
           <h3 className="font-bold flex items-center gap-2 text-foreground mb-3 text-sm uppercase tracking-wide">
             <Info className="w-4 h-4 text-muted" />
-            Quick Tips
+            Советы
           </h3>
           <ul className="space-y-3 text-sm text-foreground/80 font-medium">
             <li className="flex items-start gap-2">
               <TrendingUp className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-              <span>Review your spending before the end of the day, not after.</span>
+              <span>Проверяйте расходы до конца дня, а не после — это помогает корректировать поведение.</span>
             </li>
             <li className="flex items-start gap-2">
               <TrendingUp className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-              <span>If you spend less today, your daily limit will automatically increase tomorrow!</span>
+              <span>Если вы потратите меньше сегодня, дневной лимит автоматически увеличится завтра!</span>
             </li>
           </ul>
         </Card>
 
         <div className="text-center pb-6 pt-2">
           <p className="text-xs text-muted font-medium">
-            Data is stored securely on your device.
+            Данные хранятся локально на вашем устройстве.
           </p>
         </div>
 
