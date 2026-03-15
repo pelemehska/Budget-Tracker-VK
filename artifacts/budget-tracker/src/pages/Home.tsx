@@ -18,8 +18,20 @@ export default function Home() {
     dailyLimit,
   } = useBudget();
 
+  const [rawValue, setRawValue] = useState(budget > 0 ? String(budget) : "");
   const [isFocused, setIsFocused] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setRawValue(raw);
+    const num = parseFloat(raw.replace(",", "."));
+    if (!isNaN(num) && num >= 0) {
+      setBudget(num);
+    } else if (raw === "") {
+      setBudget(0);
+    }
+  };
 
   return (
     <div className="h-screen w-full flex justify-center items-center bg-background overflow-hidden">
@@ -80,12 +92,13 @@ export default function Home() {
                     ₽
                   </div>
                   <input
-                    type="number"
-                    value={budget || ""}
-                    onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
+                    type="text"
+                    inputMode="decimal"
+                    value={rawValue}
+                    onChange={handleBudgetChange}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    placeholder="0.00"
+                    placeholder="0"
                     className="w-full bg-secondary text-foreground text-xl font-bold rounded-xl py-4 pl-9 pr-4 outline-none border-2 border-transparent transition-all focus:border-primary/30 focus:bg-white/5"
                   />
                 </div>
