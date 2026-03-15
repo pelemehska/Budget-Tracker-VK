@@ -19,18 +19,32 @@ export default function Home() {
     daysRemainingInWeek,
   } = useBudget();
 
-  const [weekMode, setWeekMode] = useState(() =>
+  // Separate weekly budget stored independently
+  const [weekBudget, setWeekBudgetState] = useState(() => {
+    const v = parseFloat(localStorage.getItem("weeklyBudget") ?? "");
+    return isNaN(v) ? 0 : v;
+  });
+  const setWeekBudget = (v: number) => {
+    setWeekBudgetState(v);
+    localStorage.setItem("weeklyBudget", String(v));
+  };
+
+  const [weekMode, setWeekModeState] = useState(() =>
     localStorage.getItem("weekMode") === "true"
   );
+  const setWeekMode = (fn: (prev: boolean) => boolean) => {
+    setWeekModeState((prev) => {
+      const next = fn(prev);
+      localStorage.setItem("weekMode", String(next));
+      return next;
+    });
+  };
 
-  useEffect(() => {
-    localStorage.setItem("weekMode", String(weekMode));
-  }, [weekMode]);
+  const activeBudget = weekMode ? weekBudget : budget;
+  const activeDays   = weekMode ? daysRemainingInWeek : daysRemaining;
+  const dailyLimit   = activeDays > 0 ? activeBudget / activeDays : activeBudget;
 
-  const activeDays = weekMode ? daysRemainingInWeek : daysRemaining;
-  const dailyLimit = activeDays > 0 ? budget / activeDays : budget;
-
-  const [rawValue, setRawValue] = useState(budget > 0 ? String(budget) : "");
+  const [rawValue, setRawValue] = useState(activeBudget > 0 ? String(activeBudget) : "");
   const [isFocused, setIsFocused] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [replaceMode, setReplaceMode] = useState(() =>
@@ -49,13 +63,21 @@ export default function Home() {
     localStorage.setItem("isPositive", String(isPositive));
   }, [isPositive]);
 
+  // Sync input when switching between month/week mode
+  useEffect(() => {
+    const b = weekMode ? weekBudget : budget;
+    setRawValue(b > 0 ? String(b) : "");
+  }, [weekMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setActive = (v: number) => weekMode ? setWeekBudget(v) : setBudget(v);
+
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setRawValue(raw);
     if (replaceMode) {
       const num = parseFloat(raw.replace(",", "."));
-      if (!isNaN(num) && num >= 0) setBudget(num);
-      else if (raw === "") setBudget(0);
+      if (!isNaN(num) && num >= 0) setActive(num);
+      else if (raw === "") setActive(0);
     }
   };
 
@@ -63,8 +85,8 @@ export default function Home() {
     const abs = parseFloat(rawValue.replace(",", "."));
     if (!isNaN(abs) && abs > 0) {
       const delta = isPositive ? abs : -abs;
-      const newBudget = Math.max(0, budget + delta);
-      setBudget(newBudget);
+      const newVal = Math.max(0, activeBudget + delta);
+      setActive(newVal);
       setRawValue("");
       setApplied(true);
       setTimeout(() => setApplied(false), 1500);
@@ -75,8 +97,7 @@ export default function Home() {
     setReplaceMode((prev) => !prev);
     setRawValue("");
     if (replaceMode === false) {
-      // switching back to replace — sync input with current budget
-      setRawValue(budget > 0 ? String(budget) : "");
+      setRawValue(activeBudget > 0 ? String(activeBudget) : "");
     }
   };
 
@@ -149,7 +170,10 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
                     <Target className="w-4 h-4 text-primary" />
-                    {replaceMode ? "Заменить сумму" : "Изменить сумму"}
+                    {replaceMode
+                      ? (weekMode ? "Бюджет на неделю" : "Бюджет на месяц")
+                      : (weekMode ? "Изменить (неделя)" : "Изменить (месяц)")
+                    }
                   </label>
 
                   {/* Toggle */}
@@ -179,7 +203,7 @@ export default function Home() {
                       exit={{ opacity: 0, height: 0 }}
                       className="text-xs text-muted font-medium"
                     >
-                      Текущая сумма: <span className="text-foreground font-bold">{formatCurrency(budget)}</span>
+                      Текущая сумма: <span className="text-foreground font-bold">{formatCurrency(activeBudget)}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
