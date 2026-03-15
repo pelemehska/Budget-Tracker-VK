@@ -23,6 +23,7 @@ export default function Home() {
   const [isFocused, setIsFocused] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [replaceMode, setReplaceMode] = useState(true);
+  const [isPositive, setIsPositive] = useState(true);
   const [applied, setApplied] = useState(false);
 
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,8 +37,9 @@ export default function Home() {
   };
 
   const applyDelta = () => {
-    const delta = parseFloat(rawValue.replace(",", "."));
-    if (!isNaN(delta)) {
+    const abs = parseFloat(rawValue.replace(",", "."));
+    if (!isNaN(abs) && abs > 0) {
+      const delta = isPositive ? abs : -abs;
       const newBudget = Math.max(0, budget + delta);
       setBudget(newBudget);
       setRawValue("");
@@ -144,9 +146,33 @@ export default function Home() {
                 </AnimatePresence>
 
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-bold text-xl">
-                    {!replaceMode && rawValue.startsWith("-") ? "−" : replaceMode ? "₽" : "+"}
-                  </div>
+                  {replaceMode ? (
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-bold text-xl">
+                      ₽
+                    </div>
+                  ) : (
+                    <motion.button
+                      onClick={() => setIsPositive((p) => !p)}
+                      whileTap={{ scale: 0.88 }}
+                      className={`absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base transition-colors duration-200 ${
+                        isPositive
+                          ? "bg-green-500/20 text-green-400 border border-green-500/40"
+                          : "bg-red-500/20 text-red-400 border border-red-500/40"
+                      }`}
+                    >
+                      <AnimatePresence mode="wait">
+                        <motion.span
+                          key={isPositive ? "plus" : "minus"}
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.5, opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {isPositive ? "+" : "−"}
+                        </motion.span>
+                      </AnimatePresence>
+                    </motion.button>
+                  )}
                   <input
                     type="text"
                     inputMode="decimal"
@@ -155,7 +181,7 @@ export default function Home() {
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     placeholder={replaceMode ? "0" : "введи сумму"}
-                    className="w-full bg-secondary text-foreground text-xl font-bold rounded-xl py-4 pl-9 pr-4 outline-none border-2 border-transparent transition-all focus:border-primary/30 focus:bg-white/5"
+                    className="w-full bg-secondary text-foreground text-xl font-bold rounded-xl py-4 pl-12 pr-4 outline-none border-2 border-transparent transition-all focus:border-primary/30 focus:bg-white/5"
                   />
                 </div>
 
