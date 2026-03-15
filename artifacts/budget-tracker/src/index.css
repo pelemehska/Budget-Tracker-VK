@@ -39,7 +39,7 @@
 
 @layer base {
   body {
-    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30 selection:text-white overflow-y-scroll;
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30 selection:text-white overflow-hidden;
     -webkit-tap-highlight-color: transparent;
   }
 }

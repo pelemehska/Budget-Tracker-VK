@@ -19,8 +19,8 @@ export default function Home() {
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <div className="min-h-screen w-full flex justify-center bg-background">
-      <div className="w-full max-w-[320px] p-4 pt-8 pb-12 space-y-4">
+    <div className="h-screen w-full flex justify-center items-center bg-background">
+      <div className="w-full max-w-[320px] p-4 space-y-4">
         
         {/* 1. DAILY LIMIT HEADER */}
         <Card className="text-center py-8 relative overflow-hidden bg-gradient-to-b from-[#7c3aed] to-[#4c1d95] text-white shadow-xl shadow-purple-900/40">
