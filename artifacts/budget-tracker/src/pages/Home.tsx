@@ -6,10 +6,163 @@ import {
   Settings,
   ArrowLeft,
   Check,
+  Copy,
+  Download,
+  Upload,
+  CloudOff,
 } from "lucide-react";
 import { useBudget } from "@/hooks/use-budget";
 import { formatCurrency } from "@/lib/utils";
 import { Card } from "@/components/Card";
+
+const SYNC_KEYS = ["monthlyBudget", "weekMode", "replaceMode", "isPositive", "lastLoggedDate", "streak"];
+
+function generateCode(): string {
+  const data: Record<string, string> = {};
+  for (const key of SYNC_KEYS) {
+    const v = localStorage.getItem(key);
+    if (v !== null) data[key] = v;
+  }
+  return btoa(JSON.stringify(data));
+}
+
+function applyCode(code: string): boolean {
+  try {
+    const data = JSON.parse(atob(code.trim()));
+    if (typeof data !== "object" || data === null) return false;
+    for (const key of SYNC_KEYS) {
+      if (key in data) localStorage.setItem(key, data[key]);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function SettingsScreen({ onBack }: { onBack: () => void }) {
+  const [code] = useState(() => generateCode());
+  const [copied, setCopied] = useState(false);
+  const [importVal, setImportVal] = useState("");
+  const [importStatus, setImportStatus] = useState<"idle" | "ok" | "error">("idle");
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleImport = () => {
+    const ok = applyCode(importVal);
+    if (ok) {
+      setImportStatus("ok");
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      setImportStatus("error");
+      setTimeout(() => setImportStatus("idle"), 2000);
+    }
+  };
+
+  return (
+    <motion.div
+      key="settings"
+      initial={{ opacity: 0, x: 40 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 40 }}
+      transition={{ type: "spring", stiffness: 280, damping: 26 }}
+      className="space-y-4"
+    >
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="p-2 rounded-xl bg-card text-muted hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h2 className="text-lg font-bold text-foreground">Настройки</h2>
+      </div>
+
+      {/* EXPORT */}
+      <Card className="space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+          <Download className="w-4 h-4 text-primary" />
+          Экспорт данных
+        </div>
+        <p className="text-xs text-muted leading-relaxed">
+          Скопируй код и сохрани его. На другом устройстве вставь код в раздел импорта.
+        </p>
+        <div className="bg-secondary rounded-xl px-3 py-3 text-xs font-mono text-foreground/60 break-all leading-relaxed select-text">
+          {code}
+        </div>
+        <motion.button
+          onClick={handleCopy}
+          whileTap={{ scale: 0.96 }}
+          className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors duration-300 ${
+            copied ? "bg-green-600 text-white" : "bg-primary text-white"
+          }`}
+        >
+          <AnimatePresence mode="wait">
+            {copied ? (
+              <motion.span key="ok" initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2">
+                <Check className="w-4 h-4" /> Скопировано!
+              </motion.span>
+            ) : (
+              <motion.span key="copy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+                <Copy className="w-4 h-4" /> Копировать код
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </Card>
+
+      {/* IMPORT */}
+      <Card className="space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+          <Upload className="w-4 h-4 text-primary" />
+          Импорт данных
+        </div>
+        <p className="text-xs text-muted leading-relaxed">
+          Вставь код с другого устройства чтобы восстановить все данные.
+        </p>
+        <textarea
+          value={importVal}
+          onChange={(e) => { setImportVal(e.target.value); setImportStatus("idle"); }}
+          placeholder="Вставь код сюда..."
+          rows={3}
+          className="w-full bg-secondary text-foreground text-xs font-mono rounded-xl px-3 py-3 outline-none border-2 border-transparent focus:border-primary/30 resize-none select-text"
+        />
+        {importStatus === "error" && (
+          <p className="text-xs text-red-400 flex items-center gap-1">
+            <CloudOff className="w-3 h-3" /> Неверный код, проверь и попробуй снова
+          </p>
+        )}
+        <motion.button
+          onClick={handleImport}
+          whileTap={{ scale: 0.96 }}
+          disabled={!importVal.trim()}
+          className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors duration-300 ${
+            importStatus === "ok"
+              ? "bg-green-600 text-white"
+              : importVal.trim()
+              ? "bg-primary text-white"
+              : "bg-secondary text-muted cursor-not-allowed"
+          }`}
+        >
+          <AnimatePresence mode="wait">
+            {importStatus === "ok" ? (
+              <motion.span key="ok" initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2">
+                <Check className="w-4 h-4" /> Данные восстановлены!
+              </motion.span>
+            ) : (
+              <motion.span key="imp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+                <Upload className="w-4 h-4" /> Применить код
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </Card>
+    </motion.div>
+  );
+}
 
 export default function Home() {
   const {
@@ -272,29 +425,7 @@ export default function Home() {
 
           {/* SETTINGS SCREEN */}
           {showSettings && (
-            <motion.div
-              key="settings"
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 40 }}
-              transition={{ type: "spring", stiffness: 280, damping: 26 }}
-              className="space-y-4"
-            >
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="p-2 rounded-xl bg-card text-muted hover:text-foreground transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <h2 className="text-lg font-bold text-foreground">Настройки</h2>
-              </div>
-
-              <Card className="py-16 flex flex-col items-center justify-center gap-3 text-center">
-                <Settings className="w-10 h-10 text-primary/40" />
-                <p className="text-muted text-sm font-medium">Скоро здесь появятся настройки</p>
-              </Card>
-            </motion.div>
+            <SettingsScreen onBack={() => setShowSettings(false)} />
           )}
 
         </AnimatePresence>
