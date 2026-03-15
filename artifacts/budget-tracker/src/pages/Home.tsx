@@ -80,7 +80,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen w-full flex justify-center items-center bg-background overflow-hidden">
+    <div className="h-screen w-full flex justify-center items-start bg-background overflow-hidden pt-12">
       <div className="w-full max-w-[320px] p-4 relative">
 
         <AnimatePresence mode="wait">
