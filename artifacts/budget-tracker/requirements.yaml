@@ -1,0 +1,11 @@
+packages:
+  "date-fns": "Easy date manipulation for days remaining calculation"
+  "framer-motion": "Smooth animations for value updates and button clicks"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes without style conflicts"
+
+images: []
+
+notes:
+  - Frontend-only application. Uses localStorage for all data persistence.
+  - No API or backend required.

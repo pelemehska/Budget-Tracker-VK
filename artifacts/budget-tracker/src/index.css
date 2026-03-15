@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* VK-inspired color palette */
+  --color-background: #ebedf0;
+  --color-foreground: #000000;
+  --color-card: #ffffff;
+  --color-card-foreground: #000000;
+  
+  --color-primary: #0077ff;
+  --color-primary-foreground: #ffffff;
+  
+  --color-secondary: #f2f3f5;
+  --color-secondary-foreground: #000000;
+  
+  --color-muted: #818c99;
+  --color-muted-foreground: #818c99;
+  
+  --color-accent: #0077ff;
+  --color-accent-foreground: #ffffff;
+  
+  --color-success: #4bb34b;
+  --color-success-foreground: #ffffff;
+
+  --color-border: #e1e3e6;
+  --color-ring: rgba(0, 119, 255, 0.3);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+}
+
+:root {
+  --background: #ebedf0;
+  --foreground: #000000;
+  --primary: #0077ff;
+  --card: #ffffff;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary overflow-y-scroll;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Hide spin buttons for number inputs to keep it clean */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
