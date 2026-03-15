@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Target, 
@@ -22,9 +22,21 @@ export default function Home() {
   const [rawValue, setRawValue] = useState(budget > 0 ? String(budget) : "");
   const [isFocused, setIsFocused] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [replaceMode, setReplaceMode] = useState(true);
-  const [isPositive, setIsPositive] = useState(true);
+  const [replaceMode, setReplaceMode] = useState(() =>
+    localStorage.getItem("replaceMode") !== "false"
+  );
+  const [isPositive, setIsPositive] = useState(() =>
+    localStorage.getItem("isPositive") !== "false"
+  );
   const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("replaceMode", String(replaceMode));
+  }, [replaceMode]);
+
+  useEffect(() => {
+    localStorage.setItem("isPositive", String(isPositive));
+  }, [isPositive]);
 
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
