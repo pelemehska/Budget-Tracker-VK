@@ -34,7 +34,7 @@ export default function Home() {
       <div className="w-full max-w-[480px] p-4 pt-8 pb-12 space-y-4">
         
         {/* 1. DAILY LIMIT HEADER */}
-        <Card className="text-center py-8 relative overflow-hidden bg-gradient-to-b from-primary to-[#005bb5] text-white shadow-xl shadow-primary/20">
+        <Card className="text-center py-8 relative overflow-hidden bg-gradient-to-b from-[#7c3aed] to-[#4c1d95] text-white shadow-xl shadow-purple-900/40">
           <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
@@ -142,7 +142,7 @@ export default function Home() {
               ${
                 isLoggedToday
                   ? "bg-success text-success-foreground shadow-lg shadow-success/20 cursor-default"
-                  : "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-[#0066cc]"
+                  : "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-[#6d28d9]"
               }
             `}
           >
