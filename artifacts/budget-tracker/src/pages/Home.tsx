@@ -39,7 +39,13 @@ function applyCode(code: string): boolean {
   }
 }
 
-function SettingsScreen({ onBack }: { onBack: () => void }) {
+const SETTINGS_TABS = [
+  { id: "sync", label: "Синхронизация", icon: "sync" },
+  { id: "about", label: "О приложении", icon: "info" },
+] as const;
+type SettingsTab = typeof SETTINGS_TABS[number]["id"];
+
+function TabSync() {
   const [code] = useState(() => generateCode());
   const [copied, setCopied] = useState(false);
   const [importVal, setImportVal] = useState("");
@@ -63,34 +69,17 @@ function SettingsScreen({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <motion.div
-      key="settings"
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      transition={{ type: "spring", stiffness: 280, damping: 26 }}
-      className="space-y-4"
-    >
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="p-2 rounded-xl bg-card text-muted hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h2 className="text-lg font-bold text-foreground">Настройки</h2>
-      </div>
-
+    <div className="space-y-4">
       {/* EXPORT */}
       <Card className="space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
           <Download className="w-4 h-4 text-primary" />
-          Экспорт данных
+          Экспорт
         </div>
         <p className="text-xs text-muted leading-relaxed">
-          Скопируй код и сохрани его. На другом устройстве вставь код в раздел импорта.
+          Скопируй код — он содержит все твои данные. Вставь его на другом устройстве чтобы восстановить.
         </p>
-        <div className="bg-secondary rounded-xl px-3 py-3 text-xs font-mono text-foreground/60 break-all leading-relaxed select-text">
+        <div className="bg-secondary rounded-xl px-3 py-3 text-xs font-mono text-foreground/50 break-all leading-relaxed select-text max-h-20 overflow-auto">
           {code}
         </div>
         <motion.button
@@ -118,7 +107,7 @@ function SettingsScreen({ onBack }: { onBack: () => void }) {
       <Card className="space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
           <Upload className="w-4 h-4 text-primary" />
-          Импорт данных
+          Импорт
         </div>
         <p className="text-xs text-muted leading-relaxed">
           Вставь код с другого устройства чтобы восстановить все данные.
@@ -132,7 +121,7 @@ function SettingsScreen({ onBack }: { onBack: () => void }) {
         />
         {importStatus === "error" && (
           <p className="text-xs text-red-400 flex items-center gap-1">
-            <CloudOff className="w-3 h-3" /> Неверный код, проверь и попробуй снова
+            <CloudOff className="w-3 h-3" /> Неверный код
           </p>
         )}
         <motion.button
@@ -154,12 +143,103 @@ function SettingsScreen({ onBack }: { onBack: () => void }) {
               </motion.span>
             ) : (
               <motion.span key="imp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-                <Upload className="w-4 h-4" /> Применить код
+                <Upload className="w-4 h-4" /> Применить
               </motion.span>
             )}
           </AnimatePresence>
         </motion.button>
       </Card>
+    </div>
+  );
+}
+
+function TabAbout() {
+  return (
+    <Card className="space-y-4">
+      <div className="flex flex-col items-center text-center gap-2 py-4">
+        <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mb-1">
+          <span className="text-2xl">₽</span>
+        </div>
+        <h3 className="font-bold text-foreground text-base">Budget Tracker</h3>
+        <p className="text-xs text-muted leading-relaxed max-w-[220px]">
+          Простой трекер бюджета с дневным лимитом. Введи бюджет на месяц — и знай сколько можно тратить каждый день.
+        </p>
+      </div>
+      <div className="border-t border-white/5 pt-3 space-y-2">
+        <div className="flex justify-between text-xs">
+          <span className="text-muted">Версия</span>
+          <span className="text-foreground font-medium">1.0.0</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-muted">Данные</span>
+          <span className="text-foreground font-medium">Хранятся локально</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-muted">Валюта</span>
+          <span className="text-foreground font-medium">Российский рубль ₽</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function SettingsScreen({ onBack }: { onBack: () => void }) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>("sync");
+
+  return (
+    <motion.div
+      key="settings"
+      initial={{ opacity: 0, x: 40 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 40 }}
+      transition={{ type: "spring", stiffness: 280, damping: 26 }}
+      className="space-y-4"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="p-2 rounded-xl bg-card text-muted hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h2 className="text-lg font-bold text-foreground">Настройки</h2>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 bg-card rounded-2xl p-1">
+        {SETTINGS_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="relative flex-1 py-2 text-xs font-semibold rounded-xl transition-colors duration-200"
+            style={{ color: activeTab === tab.id ? "#fff" : "#8b8ba7" }}
+          >
+            {activeTab === tab.id && (
+              <motion.div
+                layoutId="tab-pill"
+                className="absolute inset-0 bg-primary rounded-xl"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.18 }}
+        >
+          {activeTab === "sync" && <TabSync />}
+          {activeTab === "about" && <TabAbout />}
+        </motion.div>
+      </AnimatePresence>
     </motion.div>
   );
 }
