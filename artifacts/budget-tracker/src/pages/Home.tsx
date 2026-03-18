@@ -235,8 +235,8 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen w-full flex justify-center items-start bg-background overflow-hidden pt-12">
-      <div className="w-full max-w-[320px] p-4 relative">
+    <div className="h-screen w-full flex justify-center items-start bg-background overflow-auto pt-8 sm:pt-12 md:pt-16">
+      <div className="w-full max-w-[340px] sm:max-w-md md:max-w-lg px-4 pb-8 relative">
 
         <AnimatePresence mode="wait">
 
@@ -269,10 +269,10 @@ export default function Home() {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   className="relative z-10"
                 >
-                  <p className="text-primary-foreground/80 text-sm font-medium uppercase tracking-wider mb-2">
+                  <p className="text-primary-foreground/80 text-xs sm:text-sm font-medium uppercase tracking-wider mb-2">
                     Дневной лимит бюджета
                   </p>
-                  <div className="text-5xl font-bold tracking-tight mb-2 tabular-nums">
+                  <div className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-2 tabular-nums">
                     {formatCurrency(dailyLimit)}
                   </div>
                   <motion.button
@@ -374,7 +374,7 @@ export default function Home() {
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     placeholder={replaceMode ? "0" : "введи сумму"}
-                    className="w-full bg-secondary text-foreground text-xl font-bold rounded-xl py-4 pl-12 pr-4 outline-none border-2 border-transparent transition-all focus:border-primary/30 focus:bg-white/5"
+                    className="w-full bg-secondary text-foreground text-xl sm:text-2xl font-bold rounded-xl py-4 sm:py-5 pl-12 pr-4 outline-none border-2 border-transparent transition-all focus:border-primary/30 focus:bg-white/5"
                   />
                 </div>
 
