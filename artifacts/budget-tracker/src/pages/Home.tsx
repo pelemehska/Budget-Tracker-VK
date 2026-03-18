@@ -168,6 +168,7 @@ export default function Home() {
   const {
     budget,
     setBudget,
+    daysInMonth,
     daysRemaining,
     daysRemainingInWeek,
   } = useBudget();
@@ -180,8 +181,9 @@ export default function Home() {
     localStorage.setItem("weekMode", String(weekMode));
   }, [weekMode]);
 
-  const activeDays = weekMode ? daysRemainingInWeek : daysRemaining;
-  const dailyLimit = activeDays > 0 ? budget / activeDays : budget;
+  const dailyLimit = weekMode
+    ? (budget / 7)
+    : (daysInMonth > 0 ? budget / daysInMonth : budget);
 
   const [rawValue, setRawValue] = useState(budget > 0 ? String(budget) : "");
   const [isFocused, setIsFocused] = useState(false);
