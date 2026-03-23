@@ -1,111 +1,84 @@
 @echo off
-setlocal enabledelayedexpansion
-title Budget Tracker - Запуск
-color 0D
+setlocal
+rem Dvoynoy klik: okno ne zakryvaetsya
+if /i not "%~1"=="RUN" (
+  start "Budget Tracker" cmd /k call "%~f0" RUN
+  exit /b 0
+)
 
-echo.
-echo  ==========================================
-echo     Budget Tracker  -  Запуск сервера
-echo  ==========================================
-echo.
-
-:: Переходим в папку где лежит этот bat файл
 cd /d "%~dp0"
+chcp 65001 >nul
+color 0D
+title Budget Tracker
 
-:: --- 1. Node.js ---
-echo  [1/5] Проверяю Node.js...
-node --version >nul 2>&1
+echo.
+echo  === Budget Tracker: start ===
+echo.
+
+echo  [1/4] Node.js
+where node >nul 2>&1
 if errorlevel 1 (
-    echo.
-    echo  [!] Node.js не найден!
-    echo      Установи Node.js с сайта: https://nodejs.org
-    echo      После установки запусти этот файл снова.
-    echo.
+    echo  [ERR] Node.js not found. Install from nodejs.org
     start https://nodejs.org/en/download
-    pause
-    exit /b 1
+    goto :end
 )
-for /f "tokens=*" %%i in ('node --version') do set NODE_VER=%%i
-echo      OK - Node.js %NODE_VER%
+node --version
 
-:: --- 2. pnpm ---
-echo  [2/5] Проверяю pnpm...
-pnpm --version >nul 2>&1
-if errorlevel 1 (
-    echo      Устанавливаю pnpm...
+echo.
+echo  [2/4] pnpm
+call :find_pnpm
+if not defined PNPM_EXE (
+    echo  Trying corepack...
+    call corepack enable 2>nul
+    call corepack prepare pnpm@latest --activate 2>nul
+    call :find_pnpm
+)
+if not defined PNPM_EXE (
+    echo  Installing pnpm globally (may need Admin)...
     call npm install -g pnpm
-    if errorlevel 1 (
-        echo  [!] Не удалось установить pnpm. Запусти cmd от администратора.
-        pause
-        exit /b 1
-    )
+    call :find_pnpm
 )
-for /f "tokens=*" %%i in ('pnpm --version') do set PNPM_VER=%%i
-echo      OK - pnpm %PNPM_VER%
-
-:: --- 3. Зависимости ---
-echo  [3/5] Устанавливаю зависимости (может занять минуту)...
-call pnpm install
-if errorlevel 1 (
+if not defined PNPM_EXE (
     echo.
-    echo  [!] Ошибка при установке зависимостей!
-    pause
-    exit /b 1
+    echo  [ERR] pnpm not found. Open CMD as Administrator and run:  npm install -g pnpm
+    goto :end
 )
-echo      OK
+call "%PNPM_EXE%" --version
 
-:: --- 4. Сборка ---
-echo  [4/5] Собираю сайт...
-call pnpm --filter @workspace/budget-tracker run build
+echo.
+echo  [3/4] pnpm install
+call "%PNPM_EXE%" install
 if errorlevel 1 (
-    echo.
-    echo  [!] Ошибка при сборке сайта!
-    pause
-    exit /b 1
+    echo  [ERR] pnpm install failed.
+    goto :end
 )
-echo      OK - Сайт собран
 
-:: --- 5. Запуск сервера ---
-echo  [5/5] Запускаю сервер...
-start "Budget Tracker" cmd /k "pnpm --filter @workspace/budget-tracker run preview --host 0.0.0.0 --port 4173"
+echo.
+echo  [4/4] Starting Vite in second window
+start "Budget Tracker Vite" cmd /k call "%~dp0run-vite.bat"
+
+echo  Waiting 5 sec...
 timeout /t 5 /nobreak >nul
-
-:: --- Cloudflare Tunnel ---
-echo.
-echo  ==========================================
-echo   Настраиваю публичный доступ...
-echo  ==========================================
-echo.
-
-set CFPATH=%~dp0cloudflared.exe
-
-if not exist "%CFPATH%" (
-    echo  Скачиваю cloudflared (один раз ~30 МБ)...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe' -OutFile '%CFPATH%'"
-    if errorlevel 1 (
-        echo.
-        echo  [!] Не удалось скачать cloudflared.
-        echo      Проверь интернет или скачай вручную:
-        echo      https://github.com/cloudflare/cloudflared/releases/latest
-        echo      и положи cloudflared.exe рядом с этим файлом.
-        echo.
-        echo  Сайт доступен локально: http://localhost:4173
-        start http://localhost:4173
-        pause
-        exit /b 1
-    )
-    echo      OK - cloudflared скачан
-)
+start "" "http://localhost:5173/"
 
 echo.
-echo  ==========================================
-echo   Сейчас появится ссылка для подключения.
-echo   Отправь её другу - он сможет зайти!
-echo.
-echo   Чтобы выключить - закрой ОБА окна.
-echo  ==========================================
+echo  Browser opened. Close the Vite window to stop server.
 echo.
 
-"%CFPATH%" tunnel --url http://localhost:4173
+:end
 pause
+endlocal
+goto :eof
+
+:find_pnpm
+set "PNPM_EXE="
+if exist "%APPDATA%\npm\pnpm.cmd" set "PNPM_EXE=%APPDATA%\npm\pnpm.cmd"
+if not defined PNPM_EXE if exist "%USERPROFILE%\AppData\Local\pnpm\pnpm.cmd" set "PNPM_EXE=%USERPROFILE%\AppData\Local\pnpm\pnpm.cmd"
+if defined PNPM_EXE goto :eof
+where pnpm >nul 2>&1
+if errorlevel 1 goto :eof
+for /f "delims=" %%i in ('where pnpm 2^>nul') do (
+    set "PNPM_EXE=%%i"
+    goto :eof
+)
+goto :eof
