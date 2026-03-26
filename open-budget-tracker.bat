@@ -37,7 +37,7 @@ if not defined PNPM_EXE (
     echo  Installing pnpm globally (may need Admin)...
     call npm install -g pnpm
     call :find_pnpm
-)
+Н)
 if not defined PNPM_EXE (
     echo.
     echo  [ERR] pnpm not found. Open CMD as Administrator and run:  npm install -g pnpm
