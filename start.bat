@@ -21,15 +21,12 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do for /f "t
 
 echo.
 echo  ═══════════════════════════════════
-echo   Сервер запущен
+echo   Budget Tracker
 echo  ═══════════════════════════════════
 echo.
 echo   Локально: http://localhost:5173
 echo   В сети:   http://%LOCAL_IP%:5173
-echo.
-echo   Для доступа из интернета:
-echo   Открой новый терминал и введи:
-echo   ssh -R 80:localhost:5173 localhost.run
+echo   Онлайн:   https://pelemehska.github.io/Budget-Tracker-VK
 echo.
 echo   Ctrl+C для остановки
 echo.
