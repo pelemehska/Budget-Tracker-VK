@@ -363,7 +363,7 @@ export default function Home() {
     salaryEntries, setSalaryEntries,
     rolloverMode, setRolloverMode,
     remainingBudget, remainingDays, savings,
-    dailyLimit, totalToday, streak, expenses,
+    dailyLimit, totalToday, streak, expenses, setExpenses,
     totalSpent, budgetProgress, totalIncome,
     applyExpense, undoLastExpense, recalc,
   } = useBudget();

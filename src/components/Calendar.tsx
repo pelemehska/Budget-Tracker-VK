@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Plus, Trash2, ArrowRight, CalendarDays } fro
 import {
   startOfMonth, endOfMonth, eachDayOfInterval, getDay, format,
   isToday, isSameMonth, addMonths, subMonths, getDate,
-  getMonth, getYear, differenceInCalendarDays, startOfDay, parseISO,
+  getMonth, getYear, differenceInCalendarDays, startOfDay, parseISO, isAfter,
 } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Card } from "./Card";
@@ -356,6 +356,3 @@ export function Calendar({ salaryEntries, onEntriesChange }: CalendarProps) {
     </Card>
   );
 }
-
-// Needed import
-import { isAfter } from "date-fns";
