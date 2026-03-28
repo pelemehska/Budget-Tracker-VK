@@ -183,11 +183,13 @@ function ConfirmDialog({ open, onClose, onConfirm, title, description }: {
 }
 
 // ─── Settings Screen ─────────────────────────────────────────────────
-function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset }: {
+function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salaryEntries, setSalaryEntries }: {
   onBack: () => void;
   rolloverMode: boolean;
   setRolloverMode: (v: boolean) => void;
   onReset: () => void;
+  salaryEntries: import("@/hooks/use-budget").SalaryEntry[];
+  setSalaryEntries: React.Dispatch<React.SetStateAction<import("@/hooks/use-budget").SalaryEntry[]>>;
 }) {
   const [activeTab, setActiveTab] = useState<"sync" | "about">("sync");
   const [showConfirm, setShowConfirm] = useState(false);
@@ -214,6 +216,9 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset }: {
           Сбросить данные периода
         </motion.button>
       </Card>
+
+      {/* Calendar */}
+      <Calendar salaryEntries={salaryEntries} onEntriesChange={setSalaryEntries} />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-card rounded-2xl p-1">
@@ -401,9 +406,6 @@ export default function Home() {
               {/* Progress Bar */}
               {totalIncome > 0 && <Card><BudgetProgressBar spent={totalSpent} total={totalIncome} /></Card>}
 
-              {/* Calendar */}
-              <Calendar salaryEntries={salaryEntries} onEntriesChange={setSalaryEntries} />
-
               {/* Record Entry */}
               <Card className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -474,7 +476,8 @@ export default function Home() {
           {/* ─── SETTINGS SCREEN ─── */}
           {showSettings && (
             <SettingsScreen onBack={() => setShowSettings(false)} rolloverMode={rolloverMode}
-              setRolloverMode={setRolloverMode} onReset={handleReset} />
+              setRolloverMode={setRolloverMode} onReset={handleReset}
+              salaryEntries={salaryEntries} setSalaryEntries={setSalaryEntries} />
           )}
 
         </AnimatePresence>
