@@ -220,24 +220,14 @@ export function Calendar({ salaryEntries, onEntriesChange }: CalendarProps) {
                   transition-all duration-150 cursor-pointer overflow-hidden
                   ${!isCurrentMonthView ? "text-foreground/15 cursor-default" : ""}
                   ${isSelected ? "bg-primary text-white font-bold ring-2 ring-primary/50 shadow-lg shadow-primary/20" : ""}
-                  ${isTodayDate && !isSelected ? "bg-primary/15 text-primary font-bold" : ""}
-                  ${isPast && isCurrentMonthView && !isSelected ? "text-foreground/35" : ""}
-                  ${isWeekend && !isTodayDate && !isSelected && isCurrentMonthView ? "text-rose-400/70" : ""}
-                  ${!isTodayDate && !isPast && isCurrentMonthView && !isSelected ? "text-foreground hover:bg-secondary/80" : ""}
+                  ${hasSalary && !isSelected ? "bg-amber-400 text-black font-bold shadow-md shadow-amber-400/30" : ""}
+                  ${isTodayDate && !isSelected && !hasSalary ? "bg-primary/15 text-primary font-bold" : ""}
+                  ${isPast && isCurrentMonthView && !isSelected && !hasSalary ? "text-foreground/35" : ""}
+                  ${isWeekend && !isTodayDate && !isSelected && isCurrentMonthView && !hasSalary ? "text-rose-400/70" : ""}
+                  ${!isTodayDate && !isPast && isCurrentMonthView && !isSelected && !hasSalary ? "text-foreground hover:bg-secondary/80" : ""}
                 `}
               >
                 <span className="relative z-10">{dayNum}</span>
-                {hasSalary && (
-                  <div className="absolute bottom-1 flex gap-0.5">
-                    {salaries!.length === 1 ? (
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.5)]" />
-                    ) : (
-                      salaries!.map((_, i) => (
-                        <div key={i} className="w-1.25 h-1.25 rounded-full bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.5)]" style={{ width: 5, height: 5 }} />
-                      ))
-                    )}
-                  </div>
-                )}
               </motion.button>
             );
           })}
