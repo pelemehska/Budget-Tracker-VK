@@ -183,15 +183,16 @@ function ConfirmDialog({ open, onClose, onConfirm, title, description }: {
 }
 
 // ─── Settings Screen ─────────────────────────────────────────────────
-function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salaryEntries, setSalaryEntries }: {
+function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salaryEntries, setSalaryEntries, expenses }: {
   onBack: () => void;
   rolloverMode: boolean;
   setRolloverMode: (v: boolean) => void;
   onReset: () => void;
   salaryEntries: import("@/hooks/use-budget").SalaryEntry[];
   setSalaryEntries: React.Dispatch<React.SetStateAction<import("@/hooks/use-budget").SalaryEntry[]>>;
+  expenses: Expense[];
 }) {
-  const [activeTab, setActiveTab] = useState<"params" | "sync" | "about">("params");
+  const [activeTab, setActiveTab] = useState<"params" | "history" | "sync" | "about">("params");
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
@@ -206,7 +207,7 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
 
       {/* Tabs */}
       <div className="flex gap-1 bg-card rounded-2xl p-1">
-        {(["params", "sync", "about"] as const).map((tab) => (
+        {(["params", "history", "sync", "about"] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className="relative flex-1 py-2 text-xs font-semibold rounded-xl transition-colors duration-200"
             style={{ color: activeTab === tab ? "#fff" : "#8b8ba7" }}>
@@ -214,7 +215,7 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
               <motion.div layoutId="tab-pill" className="absolute inset-0 bg-primary rounded-xl"
                 transition={{ type: "spring", stiffness: 400, damping: 30 }} />
             )}
-            <span className="relative z-10">{tab === "params" ? "Параметры" : tab === "sync" ? "Синхронизация" : "О приложении"}</span>
+            <span className="relative z-10">{tab === "params" ? "Параметры" : tab === "history" ? "История" : tab === "sync" ? "Синхронизация" : "О приложении"}</span>
           </button>
         ))}
       </div>
@@ -238,6 +239,7 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
               <Calendar salaryEntries={salaryEntries} onEntriesChange={setSalaryEntries} />
             </div>
           )}
+          {activeTab === "history" && <ExpenseHistory expenses={expenses} />}
           {activeTab === "sync" && <TabSync />}
           {activeTab === "about" && <TabAbout />}
         </motion.div>
@@ -468,9 +470,6 @@ export default function Home() {
                   </motion.button>
                 )}
               </Card>
-
-              {/* Expense History */}
-              <ExpenseHistory expenses={expenses} />
             </motion.div>
           )}
 
@@ -478,7 +477,7 @@ export default function Home() {
           {showSettings && (
             <SettingsScreen onBack={() => setShowSettings(false)} rolloverMode={rolloverMode}
               setRolloverMode={setRolloverMode} onReset={handleReset}
-              salaryEntries={salaryEntries} setSalaryEntries={setSalaryEntries} />
+              salaryEntries={salaryEntries} setSalaryEntries={setSalaryEntries} expenses={expenses} />
           )}
 
         </AnimatePresence>
