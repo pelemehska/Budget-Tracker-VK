@@ -220,7 +220,7 @@ export function Calendar({ salaryEntries, onEntriesChange }: CalendarProps) {
                   transition-all duration-150 cursor-pointer overflow-hidden
                   ${!isCurrentMonthView ? "text-foreground/15 cursor-default" : ""}
                   ${isSelected ? "bg-primary text-white font-bold ring-2 ring-primary/50 shadow-lg shadow-primary/20" : ""}
-                  ${hasSalary && !isSelected ? "bg-amber-400 text-black font-bold shadow-md shadow-amber-400/30" : ""}
+                  ${hasSalary && !isSelected ? "bg-amber-500/80 text-white font-bold shadow-md shadow-amber-500/20" : ""}
                   ${isTodayDate && !isSelected && !hasSalary ? "bg-primary/15 text-primary font-bold" : ""}
                   ${isPast && isCurrentMonthView && !isSelected && !hasSalary ? "text-foreground/35" : ""}
                   ${isWeekend && !isTodayDate && !isSelected && isCurrentMonthView && !hasSalary ? "text-rose-400/70" : ""}
