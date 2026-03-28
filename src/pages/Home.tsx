@@ -191,7 +191,7 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
   salaryEntries: import("@/hooks/use-budget").SalaryEntry[];
   setSalaryEntries: React.Dispatch<React.SetStateAction<import("@/hooks/use-budget").SalaryEntry[]>>;
 }) {
-  const [activeTab, setActiveTab] = useState<"sync" | "about">("sync");
+  const [activeTab, setActiveTab] = useState<"params" | "sync" | "about">("params");
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
@@ -204,25 +204,9 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
         <h2 className="text-lg font-bold text-foreground">Настройки</h2>
       </div>
 
-      {/* Rollover & Reset */}
-      <Card className="space-y-3">
-        <div className="flex items-center gap-2 text-xs text-muted">
-          <input id="rollover-mode" type="checkbox" checked={rolloverMode}
-            onChange={(e) => setRolloverMode(e.target.checked)} className="accent-primary" />
-          <label htmlFor="rollover-mode">Режим накопления</label>
-        </div>
-        <motion.button onClick={() => setShowConfirm(true)} whileTap={{ scale: 0.96 }}
-          className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 transition-colors">
-          Сбросить данные периода
-        </motion.button>
-      </Card>
-
-      {/* Calendar */}
-      <Calendar salaryEntries={salaryEntries} onEntriesChange={setSalaryEntries} />
-
       {/* Tabs */}
       <div className="flex gap-1 bg-card rounded-2xl p-1">
-        {(["sync", "about"] as const).map((tab) => (
+        {(["params", "sync", "about"] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className="relative flex-1 py-2 text-xs font-semibold rounded-xl transition-colors duration-200"
             style={{ color: activeTab === tab ? "#fff" : "#8b8ba7" }}>
@@ -230,7 +214,7 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
               <motion.div layoutId="tab-pill" className="absolute inset-0 bg-primary rounded-xl"
                 transition={{ type: "spring", stiffness: 400, damping: 30 }} />
             )}
-            <span className="relative z-10">{tab === "sync" ? "Синхронизация" : "О приложении"}</span>
+            <span className="relative z-10">{tab === "params" ? "Параметры" : tab === "sync" ? "Синхронизация" : "О приложении"}</span>
           </button>
         ))}
       </div>
@@ -238,7 +222,24 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
       <AnimatePresence mode="wait">
         <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
-          {activeTab === "sync" ? <TabSync /> : <TabAbout />}
+          {activeTab === "params" && (
+            <div className="space-y-4">
+              <Card className="space-y-3">
+                <div className="flex items-center gap-2 text-xs text-muted">
+                  <input id="rollover-mode" type="checkbox" checked={rolloverMode}
+                    onChange={(e) => setRolloverMode(e.target.checked)} className="accent-primary" />
+                  <label htmlFor="rollover-mode">Режим накопления</label>
+                </div>
+                <motion.button onClick={() => setShowConfirm(true)} whileTap={{ scale: 0.96 }}
+                  className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 transition-colors">
+                  Сбросить данные периода
+                </motion.button>
+              </Card>
+              <Calendar salaryEntries={salaryEntries} onEntriesChange={setSalaryEntries} />
+            </div>
+          )}
+          {activeTab === "sync" && <TabSync />}
+          {activeTab === "about" && <TabAbout />}
         </motion.div>
       </AnimatePresence>
 
