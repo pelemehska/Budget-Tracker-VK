@@ -41,6 +41,7 @@ export interface BudgetState {
   totalToday: number;
   streak: number;
   expenses: Expense[];
+  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
   totalSpent: number;
   budgetProgress: number;
   totalIncome: number;
@@ -305,6 +306,7 @@ export function useBudget(): BudgetState {
     totalToday: totalTodayCalc,
     streak,
     expenses,
+    setExpenses,
     totalSpent: spent,
     budgetProgress,
     totalIncome,
