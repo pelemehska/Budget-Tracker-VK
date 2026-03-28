@@ -435,7 +435,7 @@ export default function Home() {
                   </motion.button>
                 </div>
 
-                <QuickAmounts onSelect={(v) => setSpendValue(String(v))} />
+                <QuickAmounts onSelect={(v) => setSpendValue((prev) => String((Number(prev) || 0) + v))} />
 
                 <label className="flex flex-col text-xs text-muted">
                   Сумма
