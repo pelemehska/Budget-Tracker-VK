@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, ArrowLeft, Check, Copy, Download, Upload, CloudOff,
-  Plus, Minus, Flame, Undo2, TrendingUp, TrendingDown, AlertTriangle, CalendarDays,
+  Plus, Minus, Flame, Undo2, TrendingUp, TrendingDown, AlertTriangle, CalendarDays, Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -105,52 +105,82 @@ function QuickAmounts({ onSelect }: { onSelect: (v: number) => void }) {
 }
 
 // ─── Expense History ─────────────────────────────────────────────────
-function ExpenseHistory({ expenses }: { expenses: Expense[] }) {
+function ExpenseHistory({ expenses, onDelete, onClearAll }: {
+  expenses: Expense[];
+  onDelete: (id: string) => void;
+  onClearAll: () => void;
+}) {
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
+
   if (expenses.length === 0) {
     return <Card className="text-center py-8"><p className="text-xs text-muted">Пока нет записей</p></Card>;
   }
+
   const grouped = expenses.reduce<Record<string, Expense[]>>((acc, e) => {
     (acc[e.date] ??= []).push(e);
     return acc;
   }, {});
 
   return (
-    <Card className="space-y-3 max-h-64 overflow-y-auto">
-      <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
-        <CalendarDays className="w-4 h-4 text-primary" />
-        История
-      </div>
-      {Object.entries(grouped).map(([date, items]) => (
-        <div key={date} className="space-y-1.5">
-          <p className="text-[10px] text-muted font-medium uppercase tracking-wider sticky top-0 bg-card py-1">
-            {format(new Date(date + "T00:00:00"), "d MMMM, EEEE", { locale: ru })}
-          </p>
-          {items.map((e) => (
-            <motion.div
-              key={e.id}
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between py-2 px-3 rounded-xl bg-secondary/50"
-            >
-              <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
-                  e.isPositive ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
-                }`}>
-                  {e.isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+    <div className="space-y-3">
+      <Card className="space-y-3 max-h-[50vh] overflow-y-auto overscroll-contain">
+        {Object.entries(grouped).map(([date, items]) => (
+          <div key={date} className="space-y-1.5">
+            <p className="text-[10px] text-muted font-medium uppercase tracking-wider sticky top-0 bg-card py-1 z-10">
+              {format(new Date(date + "T00:00:00"), "d MMMM, EEEE", { locale: ru })}
+            </p>
+            {items.map((e) => (
+              <motion.div
+                key={e.id}
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between py-2 px-3 rounded-xl bg-secondary/50"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                    e.isPositive ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                  }`}>
+                    {e.isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-foreground font-medium">
+                      {e.isPositive ? "+" : "-"}{formatCurrency(e.amount)}
+                    </p>
+                    {e.note && <p className="text-[10px] text-muted truncate">{e.note}</p>}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-foreground font-medium">
-                    {e.isPositive ? "+" : "-"}{formatCurrency(e.amount)}
-                  </p>
-                  {e.note && <p className="text-[10px] text-muted">{e.note}</p>}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-muted">{format(new Date(e.timestamp), "HH:mm")}</span>
+                  <button
+                    onClick={() => onDelete(e.id)}
+                    className="p-1 rounded-lg text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-              </div>
-              <span className="text-[10px] text-muted">{format(new Date(e.timestamp), "HH:mm")}</span>
-            </motion.div>
-          ))}
-        </div>
-      ))}
-    </Card>
+              </motion.div>
+            ))}
+          </div>
+        ))}
+      </Card>
+
+      <motion.button
+        onClick={() => setShowConfirmClear(true)}
+        whileTap={{ scale: 0.96 }}
+        className="w-full py-2.5 rounded-xl text-xs font-semibold text-rose-400 bg-rose-600/10 hover:bg-rose-600/20 transition-colors flex items-center justify-center gap-1.5"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+        Очистить всю историю
+      </motion.button>
+
+      <ConfirmDialog
+        open={showConfirmClear}
+        onClose={() => setShowConfirmClear(false)}
+        onConfirm={onClearAll}
+        title="Очистить историю?"
+        description="Все записи трат будут удалены безвозвратно."
+      />
+    </div>
   );
 }
 
@@ -183,7 +213,7 @@ function ConfirmDialog({ open, onClose, onConfirm, title, description }: {
 }
 
 // ─── Settings Screen ─────────────────────────────────────────────────
-function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salaryEntries, setSalaryEntries, expenses }: {
+function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salaryEntries, setSalaryEntries, expenses, setExpenses }: {
   onBack: () => void;
   rolloverMode: boolean;
   setRolloverMode: (v: boolean) => void;
@@ -191,6 +221,7 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
   salaryEntries: import("@/hooks/use-budget").SalaryEntry[];
   setSalaryEntries: React.Dispatch<React.SetStateAction<import("@/hooks/use-budget").SalaryEntry[]>>;
   expenses: Expense[];
+  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
 }) {
   const [activeTab, setActiveTab] = useState<"params" | "history" | "sync" | "about">("params");
   const [showConfirm, setShowConfirm] = useState(false);
@@ -239,7 +270,13 @@ function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset, salary
               <Calendar salaryEntries={salaryEntries} onEntriesChange={setSalaryEntries} />
             </div>
           )}
-          {activeTab === "history" && <ExpenseHistory expenses={expenses} />}
+          {activeTab === "history" && (
+            <ExpenseHistory
+              expenses={expenses}
+              onDelete={(id) => setExpenses((prev) => prev.filter((e) => e.id !== id))}
+              onClearAll={() => setExpenses([])}
+            />
+          )}
           {activeTab === "sync" && <TabSync />}
           {activeTab === "about" && <TabAbout />}
         </motion.div>
@@ -477,7 +514,8 @@ export default function Home() {
           {showSettings && (
             <SettingsScreen onBack={() => setShowSettings(false)} rolloverMode={rolloverMode}
               setRolloverMode={setRolloverMode} onReset={handleReset}
-              salaryEntries={salaryEntries} setSalaryEntries={setSalaryEntries} expenses={expenses} />
+              salaryEntries={salaryEntries} setSalaryEntries={setSalaryEntries}
+              expenses={expenses} setExpenses={setExpenses} />
           )}
 
         </AnimatePresence>
