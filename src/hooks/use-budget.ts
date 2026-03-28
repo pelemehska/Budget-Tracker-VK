@@ -6,6 +6,10 @@ import {
   parseISO,
   differenceInCalendarDays,
   startOfDay,
+  getMonth,
+  getYear,
+  isAfter,
+  isBefore,
 } from "date-fns";
 
 export interface Expense {
@@ -17,121 +21,229 @@ export interface Expense {
   timestamp: number;
 }
 
+export interface SalaryEntry {
+  id: string;
+  date: string;
+  amount: number;
+}
+
 export interface BudgetState {
-  incomeAmount: number;
-  setIncomeAmount: (value: number) => void;
-  incomePeriod: number;
-  setIncomePeriod: (value: number) => void;
-  salaryDay: number;
-  setSalaryDay: (value: number) => void;
+  salaryEntries: SalaryEntry[];
+  setSalaryEntries: React.Dispatch<React.SetStateAction<SalaryEntry[]>>;
+
+  rolloverMode: boolean;
+  setRolloverMode: (value: boolean) => void;
 
   remainingBudget: number;
   remainingDays: number;
   savings: number;
-  rolloverMode: boolean;
-  setRolloverMode: (value: boolean) => void;
-
-  lastUpdateDate: string;
   dailyLimit: number;
   totalToday: number;
   streak: number;
   expenses: Expense[];
   totalSpent: number;
   budgetProgress: number;
+  totalIncome: number;
+  lastSalaryDate: string | null;
+  nextSalaryDate: string | null;
 
-  startPeriod: () => void;
-  applyExpense: (spentAmount: number, isPositive: boolean, note?: string) => { success: boolean; message?: string };
+  applyExpense: (amount: number, isPositive: boolean, note?: string) => { success: boolean; message?: string };
   undoLastExpense: () => void;
-  syncDeferredDays: () => void;
+  recalc: () => void;
 
   daysInMonth: number;
   daysRemainingInMonth: number;
   daysRemainingInWeek: number;
 }
 
-const parseNumeric = (value: string | null, fallback: number): number => {
-  if (!value) return fallback;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+const parseNum = (v: string | null, fb: number): number => {
+  if (!v) return fb;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fb;
 };
 
-export function useBudget(): BudgetState {
-  const [incomeAmount, setIncomeAmount] = useState<number>(() =>
-    parseNumeric(localStorage.getItem("incomeAmount"), 0)
-  );
-  const [incomePeriod, setIncomePeriod] = useState<number>(() =>
-    Math.max(1, parseNumeric(localStorage.getItem("incomePeriod"), 14))
-  );
-  const [salaryDay, setSalaryDay] = useState<number>(() =>
-    Math.min(31, Math.max(1, parseNumeric(localStorage.getItem("salaryDay"), 15)))
-  );
+function calcBudget(
+  entries: SalaryEntry[],
+  expenses: Expense[],
+  savings: number,
+  rollover: boolean,
+  lastUpdate: string
+) {
+  const now = new Date();
+  const today = startOfDay(now);
 
-  const [remainingBudget, setRemainingBudget] = useState<number>(() =>
-    parseNumeric(localStorage.getItem("remainingBudget"), incomeAmount)
-  );
-  const [remainingDays, setRemainingDays] = useState<number>(() =>
-    Math.max(1, parseNumeric(localStorage.getItem("remainingDays"), incomePeriod))
-  );
-  const [savings, setSavings] = useState<number>(() =>
-    parseNumeric(localStorage.getItem("savings"), 0)
-  );
-  const [rolloverMode, setRolloverMode] = useState<boolean>(() =>
-    localStorage.getItem("rolloverMode") === "true"
-  );
-  const [lastUpdateDate, setLastUpdateDate] = useState<string>(() =>
-    localStorage.getItem("lastUpdateDate") || format(new Date(), "yyyy-MM-dd")
-  );
-  const [streak, setStreak] = useState<number>(() =>
-    parseNumeric(localStorage.getItem("streak"), 0)
-  );
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
+  const totalIncome = entries.reduce((s, e) => s + e.amount, 0);
+
+  // Last salary (today or before)
+  const pastOrToday = entries
+    .filter((e) => !isAfter(startOfDay(parseISO(e.date)), today))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const lastSalary = pastOrToday[0] || null;
+  const lastSalaryDate = lastSalary?.date || null;
+
+  // Next salary (after today)
+  const future = entries
+    .filter((e) => isAfter(startOfDay(parseISO(e.date)), today))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const nextSalary = future[0] || null;
+  const nextSalaryDate = nextSalary?.date || null;
+
+  // Remaining days
+  let remainingDays: number;
+  if (nextSalary) {
+    remainingDays = Math.max(1, differenceInCalendarDays(startOfDay(parseISO(nextSalary.date)), today));
+  } else if (lastSalary) {
+    remainingDays = Math.max(1, parseNum(localStorage.getItem("remainingDays"), 30));
+  } else {
+    remainingDays = 30;
+  }
+
+  // Remaining budget (from state, loaded from localStorage)
+  let remainingBudget = parseNum(localStorage.getItem("remainingBudget"), totalIncome);
+
+  // Spent since last salary
+  let spent = 0;
+  if (lastSalaryDate) {
+    spent = expenses
+      .filter((e) => !e.isPositive && e.date >= lastSalaryDate)
+      .reduce((s, e) => s + e.amount, 0);
+  }
+
+  // Streak
+  let streak = 0;
+  if (lastSalaryDate) {
+    const dailyL = remainingDays > 0 ? remainingBudget / remainingDays : 0;
+    const periodExpenses = expenses
+      .filter((e) => !e.isPositive && e.date >= lastSalaryDate)
+      .sort((a, b) => b.timestamp - a.timestamp);
+    for (const exp of periodExpenses) {
+      if (exp.amount <= dailyL) streak++;
+      else break;
+    }
+  }
+
+  const dailyLimit = remainingDays > 0 ? remainingBudget / remainingDays : 0;
+  const totalToday = dailyLimit + savings;
+  const budgetProgress = totalIncome > 0 ? Math.min(100, (spent / totalIncome) * 100) : 0;
+
+  return {
+    remainingBudget,
+    remainingDays,
+    dailyLimit,
+    totalToday,
+    spent,
+    budgetProgress,
+    streak,
+    totalIncome,
+    lastSalaryDate,
+    nextSalaryDate,
+  };
+}
+
+export function useBudget(): BudgetState {
+  const [salaryEntries, setSalaryEntries] = useState<SalaryEntry[]>(() => {
     try {
-      const raw = localStorage.getItem("expenses");
-      return raw ? JSON.parse(raw) : [];
+      const r = localStorage.getItem("salaryEntries");
+      return r ? JSON.parse(r) : [];
     } catch {
       return [];
     }
   });
+  const [rolloverMode, setRolloverMode] = useState<boolean>(() =>
+    localStorage.getItem("rolloverMode") === "true"
+  );
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    try {
+      const r = localStorage.getItem("expenses");
+      return r ? JSON.parse(r) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [savings, setSavings] = useState<number>(() =>
+    parseNum(localStorage.getItem("savings"), 0)
+  );
+  const [lastUpdateDate, setLastUpdateDate] = useState<string>(() =>
+    localStorage.getItem("lastUpdateDate") || format(new Date(), "yyyy-MM-dd")
+  );
+  const [remainingBudget, setRemainingBudget] = useState<number>(() =>
+    parseNum(localStorage.getItem("remainingBudget"), 0)
+  );
+  const [remainingDays, setRemainingDays] = useState<number>(() =>
+    parseNum(localStorage.getItem("remainingDays"), 30)
+  );
 
-  // Sync all to localStorage
-  useEffect(() => { localStorage.setItem("incomeAmount", incomeAmount.toString()); }, [incomeAmount]);
-  useEffect(() => { localStorage.setItem("incomePeriod", incomePeriod.toString()); }, [incomePeriod]);
-  useEffect(() => { localStorage.setItem("salaryDay", salaryDay.toString()); }, [salaryDay]);
+  // Persist
+  useEffect(() => { localStorage.setItem("salaryEntries", JSON.stringify(salaryEntries)); }, [salaryEntries]);
+  useEffect(() => { localStorage.setItem("rolloverMode", String(rolloverMode)); }, [rolloverMode]);
+  useEffect(() => { localStorage.setItem("expenses", JSON.stringify(expenses)); }, [expenses]);
+  useEffect(() => { localStorage.setItem("savings", savings.toString()); }, [savings]);
+  useEffect(() => { localStorage.setItem("lastUpdateDate", lastUpdateDate); }, [lastUpdateDate]);
   useEffect(() => { localStorage.setItem("remainingBudget", remainingBudget.toString()); }, [remainingBudget]);
   useEffect(() => { localStorage.setItem("remainingDays", remainingDays.toString()); }, [remainingDays]);
-  useEffect(() => { localStorage.setItem("savings", savings.toString()); }, [savings]);
-  useEffect(() => { localStorage.setItem("rolloverMode", String(rolloverMode)); }, [rolloverMode]);
-  useEffect(() => { localStorage.setItem("lastUpdateDate", lastUpdateDate); }, [lastUpdateDate]);
-  useEffect(() => { localStorage.setItem("streak", streak.toString()); }, [streak]);
-  useEffect(() => { localStorage.setItem("expenses", JSON.stringify(expenses)); }, [expenses]);
+
+  // Recalc budget
+  const recalc = useCallback(() => {
+    const b = calcBudget(salaryEntries, expenses, savings, rolloverMode, lastUpdateDate);
+    setRemainingBudget(b.remainingBudget);
+    setRemainingDays(b.remainingDays);
+  }, [salaryEntries, expenses, savings, rolloverMode, lastUpdateDate]);
+
+  // Auto-recalc on data changes
+  useEffect(() => {
+    const b = calcBudget(salaryEntries, expenses, savings, rolloverMode, lastUpdateDate);
+    setRemainingBudget(b.remainingBudget);
+    setRemainingDays(b.remainingDays);
+  }, [salaryEntries, expenses, savings, rolloverMode, lastUpdateDate]);
+
+  // Derived (recalculated each render)
+  const totalIncome = salaryEntries.reduce((s, e) => s + e.amount, 0);
+
+  const today = startOfDay(new Date());
+  const pastOrToday = salaryEntries
+    .filter((e) => !isAfter(startOfDay(parseISO(e.date)), today))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const lastSalaryDate = pastOrToday[0]?.date || null;
+
+  const future = salaryEntries
+    .filter((e) => isAfter(startOfDay(parseISO(e.date)), today))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const nextSalaryDate = future[0]?.date || null;
 
   const dailyLimit = remainingDays > 0 ? remainingBudget / remainingDays : 0;
-  const totalToday = dailyLimit + savings;
-  const totalSpent = incomeAmount > 0 ? incomeAmount - remainingBudget : 0;
-  const budgetProgress = incomeAmount > 0 ? Math.min(100, (totalSpent / incomeAmount) * 100) : 0;
+  const totalTodayCalc = dailyLimit + savings;
 
-  const startPeriod = useCallback(() => {
-    setRemainingBudget(incomeAmount);
-    setRemainingDays(Math.max(1, incomePeriod));
-    setSavings(0);
-    setLastUpdateDate(format(new Date(), "yyyy-MM-dd"));
-    setStreak(0);
-    setExpenses([]);
-  }, [incomeAmount, incomePeriod]);
+  let spent = 0;
+  if (lastSalaryDate) {
+    spent = expenses
+      .filter((e) => !e.isPositive && e.date >= lastSalaryDate)
+      .reduce((s, e) => s + e.amount, 0);
+  }
+  const budgetProgress = totalIncome > 0 ? Math.min(100, (spent / totalIncome) * 100) : 0;
 
-  const applyExpense = useCallback((spentAmount: number, isPositive: boolean, note?: string) => {
-    const amount = Number(spentAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
+  let streak = 0;
+  if (lastSalaryDate) {
+    const periodExpenses = expenses
+      .filter((e) => !e.isPositive && e.date >= lastSalaryDate)
+      .sort((a, b) => b.timestamp - a.timestamp);
+    for (const exp of periodExpenses) {
+      if (exp.amount <= dailyLimit) streak++;
+      else break;
+    }
+  }
+
+  const applyExpense = useCallback((amount: number, isPositive: boolean, note?: string) => {
+    const amt = Number(amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
       return { success: false, message: "Введите корректную сумму (> 0)" };
     }
-
-    if (!isPositive && amount > remainingBudget) {
+    if (!isPositive && amt > remainingBudget) {
       return { success: false, message: "Недостаточно средств" };
     }
 
     const expense: Expense = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      amount,
+      amount: amt,
       date: format(new Date(), "yyyy-MM-dd"),
       note: note || "",
       isPositive,
@@ -141,122 +253,66 @@ export function useBudget(): BudgetState {
     setExpenses((prev) => [expense, ...prev]);
 
     if (isPositive) {
-      setRemainingBudget((prev) => prev + amount);
-      setRemainingDays((prev) => prev + 1);
+      setRemainingBudget((prev) => prev + amt);
     } else {
-      const L = dailyLimit;
-      const E = amount;
-      const delta = L - E;
+      const L = remainingDays > 0 ? remainingBudget / remainingDays : 0;
+      const delta = L - amt;
 
-      if (delta >= 0) {
-        if (rolloverMode) {
-          const saved = delta / 2;
-          setSavings((prev) => prev + saved);
-          setRemainingBudget((prev) => Math.max(0, prev - E - saved));
-        } else {
-          setRemainingBudget((prev) => Math.max(0, prev - E));
-        }
+      if (delta >= 0 && rolloverMode) {
+        const saved = delta / 2;
+        setSavings((prev) => prev + saved);
+        setRemainingBudget((prev) => Math.max(0, prev - amt - saved));
       } else {
-        setRemainingBudget((prev) => Math.max(0, prev - E));
+        setRemainingBudget((prev) => Math.max(0, prev - amt));
       }
-      setRemainingDays((prev) => Math.max(0, prev - 1));
     }
 
     setLastUpdateDate(format(new Date(), "yyyy-MM-dd"));
-
-    // Update streak
-    if (!isPositive && amount <= dailyLimit) {
-      setStreak((prev) => prev + 1);
-    } else if (!isPositive) {
-      setStreak(0);
-    }
-
     return { success: true };
-  }, [remainingBudget, dailyLimit, rolloverMode]);
+  }, [remainingBudget, remainingDays, rolloverMode]);
 
   const undoLastExpense = useCallback(() => {
     setExpenses((prev) => {
       if (prev.length === 0) return prev;
       const last = prev[0];
-
       if (last.isPositive) {
         setRemainingBudget((r) => Math.max(0, r - last.amount));
-        setRemainingDays((d) => Math.max(0, d - 1));
       } else {
         setRemainingBudget((r) => r + last.amount);
-        setRemainingDays((d) => d + 1);
       }
-
       return prev.slice(1);
     });
   }, []);
 
-  const syncDeferredDays = useCallback(() => {
-    const today = startOfDay(new Date());
-    const last = lastUpdateDate ? startOfDay(parseISO(lastUpdateDate)) : today;
-    const diff = differenceInCalendarDays(today, last);
-
-    if (diff <= 0 || remainingDays <= 0) {
-      setLastUpdateDate(format(today, "yyyy-MM-dd"));
-      return;
-    }
-
-    let R = remainingBudget;
-    let D = remainingDays;
-    let S = savings;
-
-    for (let i = 0; i < diff && D > 0; i += 1) {
-      const L = R / D;
-      if (rolloverMode) {
-        const savePart = L / 2;
-        S += savePart;
-        R = R - savePart;
-      }
-      D -= 1;
-    }
-
-    setRemainingBudget(Math.max(0, R));
-    setRemainingDays(Math.max(0, D));
-    setSavings(Math.max(0, S));
-    setLastUpdateDate(format(today, "yyyy-MM-dd"));
-  }, [lastUpdateDate, remainingBudget, remainingDays, savings, rolloverMode]);
-
-  const today = new Date();
-  const daysInMonth = getDaysInMonth(today);
-  const currentDay = getDate(today);
+  // Date helpers
+  const now = new Date();
+  const daysInMonth = getDaysInMonth(now);
+  const currentDay = getDate(now);
   const daysRemainingInMonth = daysInMonth - currentDay + 1;
-
-  const dayOfWeek = today.getDay();
+  const dayOfWeek = now.getDay();
   const dayIndexMonStart = (dayOfWeek + 6) % 7;
   const daysRemainingInWeek = 7 - dayIndexMonStart;
 
   return {
-    incomeAmount,
-    setIncomeAmount,
-    incomePeriod,
-    setIncomePeriod,
-    salaryDay,
-    setSalaryDay,
-
+    salaryEntries,
+    setSalaryEntries,
+    rolloverMode,
+    setRolloverMode,
     remainingBudget,
     remainingDays,
     savings,
-    rolloverMode,
-    setRolloverMode,
-
-    lastUpdateDate,
     dailyLimit,
-    totalToday,
+    totalToday: totalTodayCalc,
     streak,
     expenses,
-    totalSpent,
+    totalSpent: spent,
     budgetProgress,
-
-    startPeriod,
+    totalIncome,
+    lastSalaryDate,
+    nextSalaryDate,
     applyExpense,
     undoLastExpense,
-    syncDeferredDays,
-
+    recalc,
     daysInMonth,
     daysRemainingInMonth,
     daysRemainingInWeek,

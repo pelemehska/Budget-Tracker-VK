@@ -1,23 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Target,
-  CalendarDays,
-  Settings,
-  ArrowLeft,
-  Check,
-  Copy,
-  Download,
-  Upload,
-  CloudOff,
-  Plus,
-  Minus,
-  Flame,
-  Undo2,
-  Trash2,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
+  Settings, ArrowLeft, Check, Copy, Download, Upload, CloudOff,
+  Plus, Minus, Flame, Undo2, TrendingUp, TrendingDown, AlertTriangle, CalendarDays,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -29,8 +14,7 @@ import { Calendar } from "@/components/Calendar";
 
 // ─── Sync Keys ───────────────────────────────────────────────────────
 const SYNC_KEYS = [
-  "incomeAmount", "incomePeriod", "salaryDay",
-  "remainingBudget", "remainingDays", "savings",
+  "salaryEntries", "remainingBudget", "remainingDays", "savings",
   "rolloverMode", "lastUpdateDate", "streak", "expenses",
 ];
 
@@ -51,47 +35,38 @@ function applyCode(code: string): boolean {
       if (key in data) localStorage.setItem(key, data[key]);
     }
     return true;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 // ─── Counter Animation ───────────────────────────────────────────────
-function AnimatedCounter({ value, prefix = "" }: { value: number; prefix?: string }) {
+function AnimatedCounter({ value }: { value: number }) {
   const [displayed, setDisplayed] = useState(value);
   const frameRef = useRef<number>(0);
 
   useEffect(() => {
     const start = displayed;
     const diff = value - start;
-    if (Math.abs(diff) < 0.01) {
-      setDisplayed(value);
-      return;
-    }
+    if (Math.abs(diff) < 0.01) { setDisplayed(value); return; }
     const duration = 600;
     const startTime = performance.now();
-
     const animate = (time: number) => {
       const elapsed = time - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplayed(start + diff * eased);
-      if (progress < 1) {
-        frameRef.current = requestAnimationFrame(animate);
-      }
+      if (progress < 1) frameRef.current = requestAnimationFrame(animate);
     };
     frameRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frameRef.current);
   }, [value]);
 
-  return <>{prefix}{formatCurrency(Math.round(displayed * 100) / 100)}</>;
+  return <>{formatCurrency(Math.round(displayed * 100) / 100)}</>;
 }
 
 // ─── Progress Bar ────────────────────────────────────────────────────
 function BudgetProgressBar({ spent, total }: { spent: number; total: number }) {
   const pct = total > 0 ? Math.min(100, (spent / total) * 100) : 0;
   const color = pct < 60 ? "bg-emerald-500" : pct < 85 ? "bg-amber-400" : "bg-rose-500";
-
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between text-[10px] text-muted">
@@ -112,7 +87,6 @@ function BudgetProgressBar({ spent, total }: { spent: number; total: number }) {
 
 // ─── Quick Amount Chips ──────────────────────────────────────────────
 const QUICK_AMOUNTS = [100, 200, 350, 500, 1000];
-
 function QuickAmounts({ onSelect }: { onSelect: (v: number) => void }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -133,13 +107,8 @@ function QuickAmounts({ onSelect }: { onSelect: (v: number) => void }) {
 // ─── Expense History ─────────────────────────────────────────────────
 function ExpenseHistory({ expenses }: { expenses: Expense[] }) {
   if (expenses.length === 0) {
-    return (
-      <Card className="text-center py-8">
-        <p className="text-xs text-muted">Пока нет записей</p>
-      </Card>
-    );
+    return <Card className="text-center py-8"><p className="text-xs text-muted">Пока нет записей</p></Card>;
   }
-
   const grouped = expenses.reduce<Record<string, Expense[]>>((acc, e) => {
     (acc[e.date] ??= []).push(e);
     return acc;
@@ -176,9 +145,7 @@ function ExpenseHistory({ expenses }: { expenses: Expense[] }) {
                   {e.note && <p className="text-[10px] text-muted">{e.note}</p>}
                 </div>
               </div>
-              <span className="text-[10px] text-muted">
-                {format(new Date(e.timestamp), "HH:mm")}
-              </span>
+              <span className="text-[10px] text-muted">{format(new Date(e.timestamp), "HH:mm")}</span>
             </motion.div>
           ))}
         </div>
@@ -188,35 +155,15 @@ function ExpenseHistory({ expenses }: { expenses: Expense[] }) {
 }
 
 // ─── Confirm Dialog ──────────────────────────────────────────────────
-function ConfirmDialog({
-  open,
-  onClose,
-  onConfirm,
-  title,
-  description,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  description: string;
+function ConfirmDialog({ open, onClose, onConfirm, title, description }: {
+  open: boolean; onClose: () => void; onConfirm: () => void; title: string; description: string;
 }) {
   if (!open) return null;
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-card rounded-2xl p-6 space-y-4"
-      >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6" onClick={onClose}>
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        onClick={(e) => e.stopPropagation()} className="w-full max-w-sm bg-card rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-amber-400" />
@@ -227,31 +174,74 @@ function ConfirmDialog({
           </div>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-secondary text-foreground/70 hover:text-foreground transition-colors"
-          >
-            Отмена
-          </button>
-          <button
-            onClick={() => { onConfirm(); onClose(); }}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors"
-          >
-            Подтвердить
-          </button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-secondary text-foreground/70 hover:text-foreground transition-colors">Отмена</button>
+          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors">Подтвердить</button>
         </div>
       </motion.div>
     </motion.div>
   );
 }
 
-// ─── Settings Tabs ───────────────────────────────────────────────────
-const SETTINGS_TABS = [
-  { id: "params", label: "Параметры" },
-  { id: "sync", label: "Синхронизация" },
-  { id: "about", label: "О приложении" },
-] as const;
-type SettingsTab = typeof SETTINGS_TABS[number]["id"];
+// ─── Settings Screen ─────────────────────────────────────────────────
+function SettingsScreen({ onBack, rolloverMode, setRolloverMode, onReset }: {
+  onBack: () => void;
+  rolloverMode: boolean;
+  setRolloverMode: (v: boolean) => void;
+  onReset: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<"sync" | "about">("sync");
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  return (
+    <motion.div key="settings" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 40 }} transition={{ type: "spring", stiffness: 280, damping: 26 }} className="space-y-4">
+      <div className="flex items-center gap-3">
+        <button onClick={onBack} className="p-2 rounded-xl bg-card text-muted hover:text-foreground transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h2 className="text-lg font-bold text-foreground">Настройки</h2>
+      </div>
+
+      {/* Rollover & Reset */}
+      <Card className="space-y-3">
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <input id="rollover-mode" type="checkbox" checked={rolloverMode}
+            onChange={(e) => setRolloverMode(e.target.checked)} className="accent-primary" />
+          <label htmlFor="rollover-mode">Режим накопления</label>
+        </div>
+        <motion.button onClick={() => setShowConfirm(true)} whileTap={{ scale: 0.96 }}
+          className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600/20 text-rose-400 hover:bg-rose-600/30 transition-colors">
+          Сбросить данные периода
+        </motion.button>
+      </Card>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-card rounded-2xl p-1">
+        {(["sync", "about"] as const).map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className="relative flex-1 py-2 text-xs font-semibold rounded-xl transition-colors duration-200"
+            style={{ color: activeTab === tab ? "#fff" : "#8b8ba7" }}>
+            {activeTab === tab && (
+              <motion.div layoutId="tab-pill" className="absolute inset-0 bg-primary rounded-xl"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+            )}
+            <span className="relative z-10">{tab === "sync" ? "Синхронизация" : "О приложении"}</span>
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
+          {activeTab === "sync" ? <TabSync /> : <TabAbout />}
+        </motion.div>
+      </AnimatePresence>
+
+      <ConfirmDialog open={showConfirm} onClose={() => setShowConfirm(false)} onConfirm={onReset}
+        title="Сбросить период?" description="Все записи трат и настройки бюджета будут очищены." />
+    </motion.div>
+  );
+}
 
 function TabSync() {
   const [code] = useState(() => generateCode());
@@ -266,8 +256,7 @@ function TabSync() {
   };
 
   const handleImport = () => {
-    const ok = applyCode(importVal);
-    if (ok) {
+    if (applyCode(importVal)) {
       setImportStatus("ok");
       setTimeout(() => window.location.reload(), 1000);
     } else {
@@ -280,77 +269,26 @@ function TabSync() {
     <div className="space-y-4">
       <Card className="space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
-          <Download className="w-4 h-4 text-primary" />
-          Экспорт
+          <Download className="w-4 h-4 text-primary" /> Экспорт
         </div>
-        <p className="text-xs text-muted leading-relaxed">
-          Скопируй код — он содержит все данные. Вставь на другом устройстве для восстановления.
-        </p>
-        <div className="bg-secondary rounded-xl px-3 py-3 text-xs font-mono text-foreground/50 break-all leading-relaxed select-text max-h-20 overflow-auto">
-          {code}
-        </div>
-        <motion.button
-          onClick={handleCopy}
-          whileTap={{ scale: 0.96 }}
-          className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors duration-300 ${
-            copied ? "bg-emerald-600 text-white" : "bg-primary text-white"
-          }`}
-        >
-          <AnimatePresence mode="wait">
-            {copied ? (
-              <motion.span key="ok" initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2">
-                <Check className="w-4 h-4" /> Скопировано!
-              </motion.span>
-            ) : (
-              <motion.span key="copy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-                <Copy className="w-4 h-4" /> Копировать код
-              </motion.span>
-            )}
-          </AnimatePresence>
+        <p className="text-xs text-muted leading-relaxed">Скопируй код — он содержит все данные.</p>
+        <div className="bg-secondary rounded-xl px-3 py-3 text-xs font-mono text-foreground/50 break-all leading-relaxed select-text max-h-20 overflow-auto">{code}</div>
+        <motion.button onClick={handleCopy} whileTap={{ scale: 0.96 }}
+          className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${copied ? "bg-emerald-600 text-white" : "bg-primary text-white"}`}>
+          {copied ? <><Check className="w-4 h-4" /> Скопировано!</> : <><Copy className="w-4 h-4" /> Копировать код</>}
         </motion.button>
       </Card>
-
       <Card className="space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
-          <Upload className="w-4 h-4 text-primary" />
-          Импорт
+          <Upload className="w-4 h-4 text-primary" /> Импорт
         </div>
-        <p className="text-xs text-muted leading-relaxed">
-          Вставь код с другого устройства для восстановления данных.
-        </p>
-        <textarea
-          value={importVal}
-          onChange={(e) => { setImportVal(e.target.value); setImportStatus("idle"); }}
-          placeholder="Вставь код сюда..."
-          rows={3}
-          className="w-full bg-secondary text-foreground text-xs font-mono rounded-xl px-3 py-3 outline-none border-2 border-transparent focus:border-primary/30 resize-none select-text"
-        />
-        {importStatus === "error" && (
-          <p className="text-xs text-rose-400 flex items-center gap-1">
-            <CloudOff className="w-3 h-3" /> Неверный код
-          </p>
-        )}
-        <motion.button
-          onClick={handleImport}
-          whileTap={{ scale: 0.96 }}
-          disabled={!importVal.trim()}
-          className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors duration-300 ${
-            importStatus === "ok" ? "bg-emerald-600 text-white"
-            : importVal.trim() ? "bg-primary text-white"
-            : "bg-secondary text-muted cursor-not-allowed"
-          }`}
-        >
-          <AnimatePresence mode="wait">
-            {importStatus === "ok" ? (
-              <motion.span key="ok" initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2">
-                <Check className="w-4 h-4" /> Данные восстановлены!
-              </motion.span>
-            ) : (
-              <motion.span key="imp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-                <Upload className="w-4 h-4" /> Применить
-              </motion.span>
-            )}
-          </AnimatePresence>
+        <textarea value={importVal} onChange={(e) => { setImportVal(e.target.value); setImportStatus("idle"); }}
+          placeholder="Вставь код сюда..." rows={3}
+          className="w-full bg-secondary text-foreground text-xs font-mono rounded-xl px-3 py-3 outline-none border-2 border-transparent focus:border-primary/30 resize-none select-text" />
+        {importStatus === "error" && <p className="text-xs text-rose-400 flex items-center gap-1"><CloudOff className="w-3 h-3" /> Неверный код</p>}
+        <motion.button onClick={handleImport} whileTap={{ scale: 0.96 }} disabled={!importVal.trim()}
+          className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${importStatus === "ok" ? "bg-emerald-600 text-white" : importVal.trim() ? "bg-primary text-white" : "bg-secondary text-muted cursor-not-allowed"}`}>
+          {importStatus === "ok" ? <><Check className="w-4 h-4" /> Восстановлено!</> : <><Upload className="w-4 h-4" /> Применить</>}
         </motion.button>
       </Card>
     </div>
@@ -361,224 +299,28 @@ function TabAbout() {
   return (
     <Card className="space-y-4">
       <div className="flex flex-col items-center text-center gap-2 py-4">
-        <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mb-1">
-          <span className="text-2xl">₽</span>
-        </div>
+        <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mb-1"><span className="text-2xl">₽</span></div>
         <h3 className="font-bold text-foreground text-base">Budget Tracker</h3>
-        <p className="text-xs text-muted leading-relaxed max-w-[220px]">
-          Простой трекер бюджета с дневным лимитом. Введи доход — и знай сколько можно тратить каждый день.
-        </p>
+        <p className="text-xs text-muted leading-relaxed max-w-[220px]">Простой трекер бюджета с дневным лимитом.</p>
       </div>
       <div className="border-t border-white/5 pt-3 space-y-2">
-        <div className="flex justify-between text-xs">
-          <span className="text-muted">Версия</span>
-          <span className="text-foreground font-medium">2.0.0</span>
-        </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-muted">Данные</span>
-          <span className="text-foreground font-medium">Хранятся локально</span>
-        </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-muted">Валюта</span>
-          <span className="text-foreground font-medium">Российский рубль ₽</span>
-        </div>
+        <div className="flex justify-between text-xs"><span className="text-muted">Версия</span><span className="text-foreground font-medium">2.0.0</span></div>
+        <div className="flex justify-between text-xs"><span className="text-muted">Данные</span><span className="text-foreground font-medium">Хранятся локально</span></div>
+        <div className="flex justify-between text-xs"><span className="text-muted">Валюта</span><span className="text-foreground font-medium">Российский рубль ₽</span></div>
       </div>
     </Card>
-  );
-}
-
-function TabParams({
-  incomeAmount, setIncomeAmount,
-  incomePeriod, setIncomePeriod,
-  salaryDay, setSalaryDay,
-  rolloverMode, setRolloverMode,
-  startPeriod,
-}: {
-  incomeAmount: number;
-  setIncomeAmount: (v: number) => void;
-  incomePeriod: number;
-  setIncomePeriod: (v: number) => void;
-  salaryDay: number;
-  setSalaryDay: (v: number) => void;
-  rolloverMode: boolean;
-  setRolloverMode: (v: boolean) => void;
-  startPeriod: () => void;
-}) {
-  const [showConfirm, setShowConfirm] = useState(false);
-
-  return (
-    <div className="space-y-4">
-      <Card className="space-y-3">
-        <label className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
-          <Target className="w-4 h-4 text-primary" />
-          Доход и период
-        </label>
-
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col text-xs text-muted">
-            Доход
-            <input
-              type="number"
-              min={0}
-              value={incomeAmount}
-              onChange={(e) => setIncomeAmount(Number(e.target.value))}
-              className="mt-2 rounded-xl border border-secondary bg-background px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col text-xs text-muted">
-            Период (дней)
-            <input
-              type="number"
-              min={1}
-              value={incomePeriod}
-              onChange={(e) => { const v = Number(e.target.value); if (v > 0) setIncomePeriod(v); }}
-              className="mt-2 rounded-xl border border-secondary bg-background px-3 py-2 text-sm"
-            />
-          </label>
-        </div>
-
-        <label className="flex flex-col text-xs text-muted">
-          День зарплаты (число месяца)
-          <input
-            type="number"
-            min={1}
-            max={31}
-            value={salaryDay}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (v >= 1 && v <= 31) setSalaryDay(v);
-            }}
-            className="mt-2 rounded-xl border border-secondary bg-background px-3 py-2 text-sm"
-          />
-        </label>
-
-        <div className="flex items-center gap-2 text-xs text-muted">
-          <input
-            id="rollover-mode"
-            type="checkbox"
-            checked={rolloverMode}
-            onChange={(e) => setRolloverMode(e.target.checked)}
-            className="accent-primary"
-          />
-          <label htmlFor="rollover-mode">Режим накопления (перенести остаток)</label>
-        </div>
-
-        <motion.button
-          onClick={() => setShowConfirm(true)}
-          whileTap={{ scale: 0.96 }}
-          className="w-full py-3 rounded-xl font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-        >
-          Запустить новый период
-        </motion.button>
-      </Card>
-
-      <Calendar salaryDay={salaryDay} />
-
-      <ConfirmDialog
-        open={showConfirm}
-        onClose={() => setShowConfirm(false)}
-        onConfirm={startPeriod}
-        title="Сбросить период?"
-        description="Вся история трат и накопления будут очищены."
-      />
-    </div>
-  );
-}
-
-function SettingsScreen({
-  onBack,
-  incomeAmount, setIncomeAmount,
-  incomePeriod, setIncomePeriod,
-  salaryDay, setSalaryDay,
-  rolloverMode, setRolloverMode,
-  startPeriod,
-}: {
-  onBack: () => void;
-  incomeAmount: number;
-  setIncomeAmount: (v: number) => void;
-  incomePeriod: number;
-  setIncomePeriod: (v: number) => void;
-  salaryDay: number;
-  setSalaryDay: (v: number) => void;
-  rolloverMode: boolean;
-  setRolloverMode: (v: boolean) => void;
-  startPeriod: () => void;
-}) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("params");
-
-  return (
-    <motion.div
-      key="settings"
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      transition={{ type: "spring", stiffness: 280, damping: 26 }}
-      className="space-y-4"
-    >
-      <div className="flex items-center gap-3">
-        <button onClick={onBack} className="p-2 rounded-xl bg-card text-muted hover:text-foreground transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h2 className="text-lg font-bold text-foreground">Настройки</h2>
-      </div>
-
-      <div className="flex gap-1 bg-card rounded-2xl p-1">
-        {SETTINGS_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="relative flex-1 py-2 text-xs font-semibold rounded-xl transition-colors duration-200"
-            style={{ color: activeTab === tab.id ? "#fff" : "#8b8ba7" }}
-          >
-            {activeTab === tab.id && (
-              <motion.div
-                layoutId="tab-pill"
-                className="absolute inset-0 bg-primary rounded-xl"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-            <span className="relative z-10">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.18 }}
-        >
-          {activeTab === "params" && (
-            <TabParams
-              incomeAmount={incomeAmount} setIncomeAmount={setIncomeAmount}
-              incomePeriod={incomePeriod} setIncomePeriod={setIncomePeriod}
-              salaryDay={salaryDay} setSalaryDay={setSalaryDay}
-              rolloverMode={rolloverMode} setRolloverMode={setRolloverMode}
-              startPeriod={startPeriod}
-            />
-          )}
-          {activeTab === "sync" && <TabSync />}
-          {activeTab === "about" && <TabAbout />}
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
   );
 }
 
 // ─── Main Home Component ─────────────────────────────────────────────
 export default function Home() {
   const {
-    incomeAmount, setIncomeAmount,
-    incomePeriod, setIncomePeriod,
-    salaryDay, setSalaryDay,
-    remainingBudget, remainingDays,
-    savings, rolloverMode, setRolloverMode,
+    salaryEntries, setSalaryEntries,
+    rolloverMode, setRolloverMode,
+    remainingBudget, remainingDays, savings,
     dailyLimit, totalToday, streak, expenses,
-    totalSpent, budgetProgress,
-    startPeriod, applyExpense, undoLastExpense,
-    syncDeferredDays,
+    totalSpent, budgetProgress, totalIncome,
+    applyExpense, undoLastExpense, recalc,
   } = useBudget();
 
   const { toast } = useToast();
@@ -587,61 +329,50 @@ export default function Home() {
   const [isPositive, setIsPositive] = useState(false);
   const [note, setNote] = useState("");
 
-  useEffect(() => { syncDeferredDays(); }, []);
-
   const handleSubmit = () => {
     const amount = Number(spendValue);
     const result = applyExpense(amount, isPositive, note);
     if (!result.success) {
       toast({ title: "Ошибка", description: result.message, variant: "destructive" });
     } else {
-      const label = isPositive ? "Доход" : "Расход";
-      toast({
-        title: `${label} зафиксирован!`,
-        description: `${isPositive ? "+" : "-"}${formatCurrency(amount)}`,
-      });
+      toast({ title: isPositive ? "Доход добавлен!" : "Расход записан!", description: `${isPositive ? "+" : "-"}${formatCurrency(amount)}` });
       setSpendValue("");
       setNote("");
     }
   };
 
-  const handleQuickAmount = (v: number) => {
-    setSpendValue(String(v));
+  const handleReset = () => {
+    localStorage.removeItem("expenses");
+    localStorage.removeItem("savings");
+    localStorage.removeItem("streak");
+    localStorage.removeItem("remainingBudget");
+    localStorage.removeItem("remainingDays");
+    localStorage.removeItem("rolloverMode");
+    window.location.reload();
   };
 
   return (
     <div className="h-screen w-full flex justify-center items-start bg-background overflow-auto pt-8 sm:pt-12 md:pt-16">
       <div className="w-full max-w-[340px] sm:max-w-md md:max-w-lg px-4 pb-8 relative">
-
         <AnimatePresence mode="wait">
 
           {/* ─── MAIN SCREEN ─── */}
           {!showSettings && (
-            <motion.div
-              key="main"
-              initial={{ opacity: 0, x: -40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -40 }}
-              transition={{ type: "spring", stiffness: 280, damping: 26 }}
-              className="space-y-4"
-            >
+            <motion.div key="main" initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }} transition={{ type: "spring", stiffness: 280, damping: 26 }} className="space-y-4">
+
               {/* Header */}
               <div className="flex justify-between items-center">
                 {streak > 0 && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-400"
-                  >
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-400">
                     <Flame className="w-3.5 h-3.5" />
                     <span className="text-xs font-bold">{streak}</span>
                   </motion.div>
                 )}
                 <div className="flex-1" />
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="p-2 rounded-xl bg-card text-muted hover:text-foreground transition-colors"
-                >
+                <button onClick={() => setShowSettings(true)}
+                  className="p-2 rounded-xl bg-card text-muted hover:text-foreground transition-colors">
                   <Settings className="w-5 h-5" />
                 </button>
               </div>
@@ -649,22 +380,14 @@ export default function Home() {
               {/* Daily Limit Card */}
               <Card className="text-center py-10 relative overflow-hidden bg-gradient-to-b from-[#7c3aed] to-[#4c1d95] text-white shadow-xl shadow-purple-900/40">
                 <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className="relative z-10 space-y-3"
-                >
-                  <p className="text-primary-foreground/80 text-xs sm:text-sm font-medium uppercase tracking-wider">
-                    Сегодня доступно
-                  </p>
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }} className="relative z-10 space-y-3">
+                  <p className="text-primary-foreground/80 text-xs sm:text-sm font-medium uppercase tracking-wider">Сегодня доступно</p>
                   <div className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight tabular-nums flex items-end justify-center gap-2">
                     <AnimatedCounter value={totalToday} />
                     {savings !== 0 && (
-                      <sup
-                        className={`text-[30%] font-semibold ${savings > 0 ? "text-emerald-400" : "text-rose-400"}`}
-                        style={{ verticalAlign: "super" }}
-                      >
+                      <sup className={`text-[30%] font-semibold ${savings > 0 ? "text-emerald-400" : "text-rose-400"}`}
+                        style={{ verticalAlign: "super" }}>
                         {savings > 0 ? "+" : ""}{formatCurrency(savings)}
                       </sup>
                     )}
@@ -676,37 +399,32 @@ export default function Home() {
               </Card>
 
               {/* Progress Bar */}
-              {incomeAmount > 0 && (
-                <Card>
-                  <BudgetProgressBar spent={totalSpent} total={incomeAmount} />
-                </Card>
-              )}
+              {totalIncome > 0 && <Card><BudgetProgressBar spent={totalSpent} total={totalIncome} /></Card>}
+
+              {/* Calendar */}
+              <Calendar salaryEntries={salaryEntries} onEntriesChange={setSalaryEntries} />
 
               {/* Record Entry */}
               <Card className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-wide">
                     <CalendarDays className="w-4 h-4 text-primary" />
-                    {isPositive ? "Получено сегодня" : "Потрачено сегодня"}
+                    {isPositive ? "Получено" : "Потрачено"}
                   </label>
-
                   {/* +/- Toggle */}
-                  <motion.button
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => setIsPositive(!isPositive)}
+                  <motion.button whileTap={{ scale: 0.85 }} onClick={() => setIsPositive(!isPositive)}
                     className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
-                      isPositive
-                        ? "bg-emerald-500 shadow-emerald-500/30 text-white"
-                        : "bg-rose-500 shadow-rose-500/30 text-white"
-                    }`}
-                  >
+                      isPositive ? "bg-emerald-500 shadow-emerald-500/30 text-white" : "bg-rose-500 shadow-rose-500/30 text-white"
+                    }`}>
                     <AnimatePresence mode="wait">
                       {isPositive ? (
-                        <motion.span key="plus" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                        <motion.span key="plus" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }}
+                          exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
                           <Plus className="w-4 h-4" />
                         </motion.span>
                       ) : (
-                        <motion.span key="minus" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                        <motion.span key="minus" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }}
+                          exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
                           <Minus className="w-4 h-4" />
                         </motion.span>
                       )}
@@ -714,59 +432,34 @@ export default function Home() {
                   </motion.button>
                 </div>
 
-                {/* Quick amounts */}
-                <QuickAmounts onSelect={handleQuickAmount} />
+                <QuickAmounts onSelect={(v) => setSpendValue(String(v))} />
 
-                {/* Amount input */}
                 <label className="flex flex-col text-xs text-muted">
                   Сумма
-                  <input
-                    type="number"
-                    min={0}
-                    value={spendValue}
-                    onChange={(e) => setSpendValue(e.target.value)}
-                    className="mt-2 rounded-xl border border-secondary bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/40 transition-colors"
-                    placeholder="0"
-                  />
+                  <input type="number" min={0} value={spendValue} onChange={(e) => setSpendValue(e.target.value)}
+                    className="mt-2 rounded-xl border border-secondary bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/40 transition-colors" placeholder="0" />
                 </label>
 
-                {/* Note input */}
                 <label className="flex flex-col text-xs text-muted">
-                  Заметка (необязательно)
-                  <input
-                    type="text"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    className="mt-2 rounded-xl border border-secondary bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/40 transition-colors"
-                    placeholder="Обед, такси..."
-                  />
+                  Заметка
+                  <input type="text" value={note} onChange={(e) => setNote(e.target.value)}
+                    className="mt-2 rounded-xl border border-secondary bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/40 transition-colors" placeholder="Обед, такси..." />
                 </label>
 
-                {/* Submit */}
-                <motion.button
-                  onClick={handleSubmit}
-                  whileTap={{ scale: 0.96 }}
+                <motion.button onClick={handleSubmit} whileTap={{ scale: 0.96 }}
                   disabled={!spendValue || Number(spendValue) <= 0}
                   className={`w-full py-3 rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isPositive
-                      ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                      : budgetProgress > 85
-                      ? "bg-rose-500 text-white hover:bg-rose-600"
-                      : "bg-green-500 text-white hover:bg-green-600"
-                  }`}
-                >
+                    isPositive ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                    : budgetProgress > 85 ? "bg-rose-500 text-white hover:bg-rose-600"
+                    : "bg-green-500 text-white hover:bg-green-600"
+                  }`}>
                   {isPositive ? "Добавить доход" : "Принять расход"}
                 </motion.button>
 
-                {/* Undo */}
                 {expenses.length > 0 && (
-                  <motion.button
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={undoLastExpense}
-                    whileTap={{ scale: 0.96 }}
-                    className="w-full py-2 rounded-xl text-xs font-semibold text-muted hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors flex items-center justify-center gap-1.5"
-                  >
+                  <motion.button initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                    onClick={undoLastExpense} whileTap={{ scale: 0.96 }}
+                    className="w-full py-2 rounded-xl text-xs font-semibold text-muted hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors flex items-center justify-center gap-1.5">
                     <Undo2 className="w-3.5 h-3.5" />
                     Отменить последнюю запись
                   </motion.button>
@@ -780,14 +473,8 @@ export default function Home() {
 
           {/* ─── SETTINGS SCREEN ─── */}
           {showSettings && (
-            <SettingsScreen
-              onBack={() => setShowSettings(false)}
-              incomeAmount={incomeAmount} setIncomeAmount={setIncomeAmount}
-              incomePeriod={incomePeriod} setIncomePeriod={setIncomePeriod}
-              salaryDay={salaryDay} setSalaryDay={setSalaryDay}
-              rolloverMode={rolloverMode} setRolloverMode={setRolloverMode}
-              startPeriod={startPeriod}
-            />
+            <SettingsScreen onBack={() => setShowSettings(false)} rolloverMode={rolloverMode}
+              setRolloverMode={setRolloverMode} onReset={handleReset} />
           )}
 
         </AnimatePresence>
