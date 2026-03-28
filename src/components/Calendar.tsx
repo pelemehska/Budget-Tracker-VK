@@ -214,9 +214,10 @@ export function Calendar({ salaryEntries, onEntriesChange }: CalendarProps) {
                 whileTap={{ scale: 0.88 }}
                 onClick={() => isCurrentMonthView && handleDayClick(dayNum)}
                 disabled={!isCurrentMonthView}
+                style={{ borderRadius: "9999px" }}
                 className={`
-                  aspect-square flex flex-col items-center justify-center rounded-2xl text-xs relative
-                  transition-all duration-150 cursor-pointer
+                  aspect-square flex flex-col items-center justify-center text-xs relative
+                  transition-all duration-150 cursor-pointer overflow-hidden
                   ${!isCurrentMonthView ? "text-foreground/15 cursor-default" : ""}
                   ${isSelected ? "bg-primary text-white font-bold ring-2 ring-primary/50 shadow-lg shadow-primary/20" : ""}
                   ${isTodayDate && !isSelected ? "bg-primary/15 text-primary font-bold" : ""}
